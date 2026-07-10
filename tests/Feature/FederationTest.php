@@ -75,4 +75,43 @@ final class FederationTest extends TestCase
 
         $this->assertSame([['id' => '1', 'name' => 'Alice']], $result['data']['_entities']);
     }
+
+    public function test_entities_returns_null_for_unknown_or_missing_typename(): void
+    {
+        $query = 'query ($r: [_Any!]!) { _entities(representations: $r) { __typename } }';
+
+        $result = Executor::execute(
+            $this->subgraph(),
+            Parser::parse($query),
+            variableValues: ['r' => [
+                ['__typename' => 'Ghost', 'id' => '1'], // no resolver registered
+                ['id' => '1'],                          // missing __typename
+                ['__typename' => 'User', 'id' => '999'], // resolver runs but finds nothing
+            ]],
+        )->toArray();
+
+        $this->assertSame([null, null, null], $result['data']['_entities']);
+    }
+
+    public function test_service_sdl_renders_all_federation_directives(): void
+    {
+        $base = SchemaBuilder::fromSdl('type Query { ping: String } type User { id: ID! email: String legacy: ID }');
+        $subgraph = Federation::subgraph($base, [
+            'User' => [
+                'model' => FedUser::class,
+                'resolve' => static fn (array $r): ?FedUser => null,
+                'keys' => ['id', 'email'],
+                'external' => ['legacy'],
+                'requires' => ['email' => 'legacy'],
+            ],
+        ]);
+
+        $sdl = Executor::execute($subgraph, Parser::parse('{ _service { sdl } }'))->toArray()['data']['_service']['sdl'];
+
+        $this->assertStringContainsString('@key(fields: "id") @key(fields: "email")', $sdl);
+        $this->assertStringContainsString('legacy: ID @external', $sdl);
+        $this->assertStringContainsString('@requires(fields: "legacy")', $sdl);
+        $this->assertStringContainsString('"@external"', $sdl);
+        $this->assertStringContainsString('"@requires"', $sdl);
+    }
 }

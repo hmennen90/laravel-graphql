@@ -105,4 +105,62 @@ final class GraphqlWsProtocolTest extends TestCase
 
         $this->assertSame([['type' => 'pong']], $conn->sent);
     }
+
+    public function test_second_init_is_rejected(): void
+    {
+        $conn = new FakeConnection();
+        $handler = $this->handler();
+
+        $handler->onMessage($conn, ['type' => 'connection_init']);
+        $handler->onMessage($conn, ['type' => 'connection_init']);
+
+        $this->assertSame(4429, $conn->closedCode);
+    }
+
+    public function test_unknown_message_type_closes_with_4400(): void
+    {
+        $conn = new FakeConnection();
+        $this->handler()->onMessage($conn, ['type' => 'nonsense']);
+
+        $this->assertSame(4400, $conn->closedCode);
+    }
+
+    public function test_duplicate_subscription_id_closes_with_4409(): void
+    {
+        $conn = new FakeConnection();
+        $handler = $this->handler();
+
+        $handler->onMessage($conn, ['type' => 'connection_init']);
+        $handler->onMessage($conn, ['type' => 'subscribe', 'id' => 'dup', 'payload' => ['query' => 'subscription { postAdded { id } }']]);
+        $handler->onMessage($conn, ['type' => 'subscribe', 'id' => 'dup', 'payload' => ['query' => 'subscription { postAdded { id } }']]);
+
+        $this->assertSame(4409, $conn->closedCode);
+    }
+
+    public function test_query_over_socket_completes_immediately(): void
+    {
+        $conn = new FakeConnection();
+        $handler = $this->handler();
+
+        $handler->onMessage($conn, ['type' => 'connection_init']);
+        $handler->onMessage($conn, ['type' => 'subscribe', 'id' => 'q1', 'payload' => ['query' => '{ hello }']]);
+
+        $types = array_map(static fn (array $m): string => is_string($m['type'] ?? null) ? $m['type'] : '', $conn->sent);
+        $this->assertSame(['connection_ack', 'next', 'complete'], $types);
+        $this->assertSame('world', $conn->sent[1]['payload']['data']['hello']);
+    }
+
+    public function test_close_removes_all_subscriptions_for_the_connection(): void
+    {
+        $conn = new FakeConnection();
+        $handler = $this->handler();
+
+        $handler->onMessage($conn, ['type' => 'connection_init']);
+        $handler->onMessage($conn, ['type' => 'subscribe', 'id' => 's', 'payload' => ['query' => 'subscription { postAdded { id } }']]);
+
+        $handler->onClose($conn);
+        $handler->publish('postAdded', ['id' => '1']);
+
+        $this->assertCount(1, $conn->sent); // only the ack, nothing after close
+    }
 }
