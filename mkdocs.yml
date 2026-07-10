@@ -53,3 +53,4 @@ nav:
   - Apollo Federation: federation.md
   - Benchmarks: benchmarks.md
   - Comparison: comparison.md
+  - Migrating from Lighthouse: migrating-from-lighthouse.md

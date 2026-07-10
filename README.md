@@ -687,6 +687,16 @@ A full, per-package feature comparison (vs. Lighthouse, rebing/graphql-laravel,
 webonyx/graphql-php) is in the
 [documentation](https://hmennen90.github.io/laravel-graphql/comparison/).
 
+## Migrating from Lighthouse
+
+Not a drop-in replacement, but a realistic migration: the CRUD directive **names and
+semantics** were kept compatible, so a schema on the common core
+(`@all/@find/@paginate/@hasMany/@whereConditions/@orderBy/@create…`) moves over with
+config translation and explicit `@field` resolver bindings. Lighthouse's
+convention-resolved query/mutation classes, soft-delete/`@scope`/`@builder` directives,
+custom PHP directives and subscriptions need rework. See the full
+[migration guide](https://hmennen90.github.io/laravel-graphql/migrating-from-lighthouse/).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
