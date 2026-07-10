@@ -28,10 +28,14 @@ callables that read your models directly.
 - Objects, interfaces, unions, enums, input objects, lists, non-null.
 - Comprehensive validation, introspection (GraphiQL/Apollo tooling), `@oneOf`, `@specifiedBy`.
 - Custom directives (runtime middleware **and** build-time SDL), SDL type extensions.
+- **Eloquent directive layer** (`@all`, `@find`, `@paginate`, `@hasMany`,
+  `@whereConditions`, `@orderBy`, `@create`/`@update`/`@delete`, `@search`, …) —
+  available as **SDL directives and equivalent PHP attributes** (`#[All]`, `#[Paginate]`).
+- Argument sanitisers & validation: `@trim`, `@hash`, `@globalId`, `@rules`, `@validator`.
 - **DataLoader** (N+1 batching), query **depth/complexity limits**.
 - Laravel: HTTP endpoint, batching, middleware/auth, error masking, GraphiQL,
   file uploads, Automatic Persisted Queries, `@cacheControl` HTTP caching,
-  Relay pagination, subscriptions (broadcasting **+** graphql-ws).
+  Relay pagination, subscriptions (broadcasting **+** graphql-ws), **Apollo Federation**.
 - PHP 8.4, PHPStan level 10, tested with `orchestra/testbench`.
 
 ## Requirements
@@ -212,6 +216,79 @@ extend type Query { world: String! }
 
 ---
 
+## Eloquent directives (CRUD without resolvers)
+
+Build a full CRUD API over Eloquent declaratively — the **model stays the single
+source of truth**, and directives derive queries, columns and relations from it.
+
+```graphql
+type Query {
+  users: [User!]! @all
+  user(id: ID!): User @find
+  posts: [Post!]! @paginate @whereConditions(columns: ["title"]) @orderBy(columns: ["id"])
+}
+
+type Mutation {
+  createUser(name: String!, email: String!): User @create
+  updateUser(id: ID!, name: String): User @update
+  deleteUser(id: ID!): User @delete
+}
+
+type User {
+  id: ID!
+  name: String
+  posts: [Post!]! @hasMany
+  postsCount: Int @count(relation: "posts")
+}
+```
+
+Everything is also available as **PHP attributes** that dispatch to the exact same
+implementations — pick SDL or code-first per taste, with no duplicated logic:
+
+```php
+use Hmennen90\GraphQL\Attributes\{All, Paginate, Guard};
+
+#[GraphQLType(name: 'Query')]
+final class QueryType
+{
+    #[GraphQLField(type: '[User!]!')]
+    #[All(model: User::class)]
+    public function users(): array { return []; }
+
+    #[GraphQLField(type: '[Post!]!')]
+    #[Paginate(type: 'CONNECTION')]
+    #[Guard]
+    public function posts(): array { return []; }
+}
+```
+
+Reading (`@all/@find/@first/@paginate`), relations
+(`@hasMany/@hasOne/@belongsTo/@belongsToMany/@morph*/@count`), filtering & sorting
+(`@whereConditions/@orderBy`), mutations incl. nested
+(`@create/@update/@delete/@upsert`), auth/utility (`@guard/@inject/@field/@rename`)
+and Laravel Scout (`@search`) are all supported. See
+[Eloquent directives](docs/eloquent.md) for the full reference.
+
+## Apollo Federation
+
+Expose any schema as a federated subgraph:
+
+```php
+use Hmennen90\GraphQL\Federation\Federation;
+
+$subgraph = Federation::subgraph($schema, [
+    'User' => [
+        'model'   => \App\Models\User::class,
+        'resolve' => fn (array $ref) => \App\Models\User::find($ref['id']),
+    ],
+]);
+```
+
+This adds `_service { sdl }`, `_entities(representations:)` and the `_Any`/`_Service`/
+`_Entity` types, wiring one reference resolver per entity type.
+
+---
+
 ## Generating types from your Laravel app
 
 The strongest form of "single source of truth": derive GraphQL types from the
@@ -357,6 +434,29 @@ FieldDefinition::make('register', $user, args: [
     return User::create($args);
 });
 ```
+
+Or declaratively in SDL with the built-in directives — `@rules` validates a single
+argument, `@validator` binds a dedicated validator class, and the sanitisers run
+before the resolver:
+
+```graphql
+type Mutation {
+  register(
+    email: String @rules(apply: ["required", "email"])
+    name: String @trim
+    password: String @hash
+  ): User @create
+
+  updatePost(id: ID @globalId, title: String): Post
+    @update
+    @validator(class: "App\\GraphQL\\Validators\\UpdatePostValidator")
+}
+```
+
+- `@rules(apply: [...])` — validate one argument with Laravel rules.
+- `@validator(class:)` — validate all arguments via a class exposing `rules()`.
+- `@trim` — strip surrounding whitespace; `@hash` — bcrypt a value; `@globalId` —
+  decode a Relay global id down to its raw key.
 
 ### Error masking
 

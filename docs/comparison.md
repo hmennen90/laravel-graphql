@@ -41,14 +41,17 @@ mature than long-standing projects.
 | Schema self-validation | ✅ | ✅ | ✅ | ✅ |
 | `@oneOf` / `@specifiedBy` | ⚠️ partial | — | ✅ | ✅ |
 | Field authorization | `@can` directive | method-based | manual | Gate via context **and** `@can` directive |
-| Argument validation | `@rules` directive | Laravel rules | manual | Laravel validator in resolver |
+| Argument validation | `@rules` directive | Laravel rules | manual | resolver **and** `@rules`/`@validator` directives |
+| Argument sanitisers | `@trim`/`@hash`/`@spread` | — | — | `@trim`/`@hash`/`@globalId` |
+| Eloquent CRUD directives | ✅ large catalogue | — | — | ✅ read/relations/filter/sort/mutations/Scout |
+| Federation | ✅ v2 | — | plugin | ✅ subgraph (`_service`/`_entities`) |
 | File uploads (multipart) | ✅ | ✅ | n/a | ✅ `Upload` scalar |
 | Persisted queries (APQ) | ✅ | ⚠️ | n/a | ✅ Apollo APQ |
 | Relay pagination | ✅ | ⚠️ | manual | ✅ connection helpers |
 | HTTP caching | `@cacheControl` | ⚠️ | manual | ✅ `@cacheControl` + Cache-Control |
 | Minimum PHP | 8.1+ | 8.0+ | 7.4 / 8+ | **8.4+** |
 | Static analysis | — | — | partial | **PHPStan level 10** |
-| Maturity | mature, large community | mature | mature (de-facto engine) | **new / experimental** |
+| Maturity | mature, large community | mature | mature (de-facto engine) | **new (1.0), small community** |
 
 ## Every difference, by package
 
@@ -64,11 +67,13 @@ mature than long-standing projects.
 - **Own engine.** Lighthouse runs on `webonyx/graphql-php`; this ships its own
   lexer/parser/validator/executor, so there is one fewer third-party dependency.
 - **Schema styles.** Lighthouse is SDL-only; this also supports code-first and
-  attribute-driven schemas that compile to the same internal schema.
-- **Trade-off.** Lighthouse still has a larger directive catalogue (nested
-  mutations, Scout, federation, more validation helpers), mature subscriptions and
-  a big community. This package now covers the core CRUD/relation/filter/pagination
-  directives but is younger.
+  attribute-driven schemas that compile to the same internal schema — and every
+  Eloquent directive has a `#[All]`/`#[Paginate]` attribute equivalent that runs the
+  same implementation.
+- **Trade-off.** The directive catalogues are now comparable — read, relations,
+  filter/sort, nested mutations, Scout, validation/sanitiser directives and Apollo
+  Federation are all covered here. Lighthouse still leads on maturity, subscription
+  transports and community size; this package is younger.
 
 ### vs. rebing/graphql-laravel (code-first)
 

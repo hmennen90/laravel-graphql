@@ -80,6 +80,63 @@ with `key:`).
 The `graphql:print` Artisan command prints the built schema as SDL
 (`Hmennen90\GraphQL\Engine\Schema\SchemaPrinter`).
 
+## Validation & argument sanitisers
+
+Directives on a field *argument* run before the resolver, transforming or rejecting
+the value:
+
+```graphql
+type Mutation {
+  register(
+    email: String @rules(apply: ["required", "email"])
+    name: String @trim
+    password: String @hash
+  ): User @create
+
+  updatePost(id: ID @globalId, title: String): Post
+    @update
+    @validator(class: "App\\GraphQL\\Validators\\UpdatePostValidator")
+}
+```
+
+| Directive | Effect |
+|---|---|
+| `@rules(apply: [...])` | validate one argument with Laravel rules; failure → `ValidationException` |
+| `@validator(class:)` | validate all arguments via a class exposing `rules()` (and optionally `messages()`) |
+| `@trim` | strip leading/trailing whitespace from a string argument |
+| `@hash` | bcrypt-hash a string argument (e.g. a password) |
+| `@globalId` | decode a Relay global id (`base64("Type:id")`) down to its raw key |
+
+## Code-first attributes
+
+Every field directive has a PHP attribute equivalent under `Hmennen90\GraphQL\Attributes`
+that dispatches to the **same** implementation — no duplicated logic:
+
+```php
+use Hmennen90\GraphQL\Attributes\{All, Find, First, Paginate, Guard, Count, Rename, Relation};
+
+#[GraphQLType(name: 'Query')]
+final class QueryType
+{
+    #[GraphQLField(type: '[User!]!')]
+    #[All(model: User::class)]
+    public function users(): array { return []; }
+
+    #[GraphQLField(type: '[Post!]!')]
+    #[Paginate(type: 'CONNECTION')]
+    public function posts(): array { return []; }
+}
+```
+
+Build with the directive registry so the attributes resolve:
+
+```php
+$directives = app(\Hmennen90\GraphQL\Directives\DirectiveRegistry::class)->all();
+$types = (new AttributeSchemaBuilder($directives))->build([QueryType::class, UserType::class]);
+```
+
+`#[Relation(type: "hasMany", relation: "posts")]` covers the relation directives.
+
 ## Apollo Federation
 
 Turn any schema into a federated subgraph with `Federation::subgraph()`. It adds the
@@ -100,6 +157,3 @@ $subgraph = Federation::subgraph($schema, [
 The gateway calls `_entities` with `{ __typename, ...keyFields }` representations; each is
 routed to the matching resolver and the returned model is resolved into its object type.
 `_service.sdl` exposes the subgraph SDL via the schema printer.
-
-> Roadmap: declarative `@rules`/`@validator`, argument sanitisers
-> (`@trim`/`@hash`/`@globalId`) and attribute equivalents (`#[All]`…) are planned.
