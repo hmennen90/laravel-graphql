@@ -105,8 +105,9 @@ mature than long-standing projects.
   hand-written implementation of the spec algorithms.
 - **Trade-off.** webonyx is the de-facto, battle-tested engine with the most
   exhaustive spec-edge coverage. This engine implements the comprehensive validation
-  rule set, a broad built-in directive catalogue and a benchmark harness, but has far
-  less production mileage.
+  rule set (verified by a spec conformance suite — language, validation, execution,
+  introspection), a broad built-in directive catalogue and a benchmark harness, but has
+  far less production mileage.
 
 ## When to choose which
 
