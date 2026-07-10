@@ -1,0 +1,32 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Hmennen90\GraphQL\Engine\Building\SchemaBuildContext;
+use Hmennen90\GraphQL\Engine\Building\SchemaFirst\SchemaDirective;
+use Hmennen90\GraphQL\Engine\Executor\DefaultFieldResolver;
+use Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode;
+use Hmennen90\GraphQL\Engine\Type\Definition\FieldDefinition;
+
+/** Build-time schema directive. Register it in config('graphql') or the DirectiveRegistry. */
+final readonly class {{ class }} implements SchemaDirective
+{
+    public function applyToField(FieldDefinition $field, DirectiveNode $node, SchemaBuildContext $context): FieldDefinition
+    {
+        $inner = $field->getResolver() ?? new DefaultFieldResolver();
+
+        return FieldDefinition::make(
+            $field->getName(),
+            $field->getType(),
+            static function (mixed $source, array $args, mixed $context, mixed $info) use ($inner): mixed {
+                // TODO: your directive logic here.
+                return $inner($source, $args, $context, $info);
+            },
+            array_values($field->args()),
+            $field->description(),
+            $field->deprecationReason(),
+        );
+    }
+}

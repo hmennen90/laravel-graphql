@@ -383,6 +383,16 @@ $errors = DocumentValidator::validate($schema, Parser::parse($query), [
 `config/graphql.php` controls the endpoint, GraphiQL, schema source, batching,
 error handling, security limits, persisted queries, cache-control and subscriptions.
 
+### Artisan commands
+
+```bash
+php artisan graphql:print [--write[=path]]   # export the schema as SDL
+php artisan graphql:validate                 # validate the schema (CI guard)
+php artisan graphql:subscriptions:serve      # graphql-ws WebSocket server (Swoole)
+php artisan make:graphql-type UserType       # scaffold a code-first type
+php artisan make:graphql-directive FooDirective   # scaffold a build-time directive
+```
+
 ### The `GraphQL` facade
 
 ```php

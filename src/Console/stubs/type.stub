@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Hmennen90\GraphQL\Engine\Building\CodeFirst\Attributes\GraphQLField;
+use Hmennen90\GraphQL\Engine\Building\CodeFirst\Attributes\GraphQLType;
+
+#[GraphQLType]
+final class {{ class }}
+{
+    #[GraphQLField(type: 'ID!')]
+    public function id(mixed $source): string
+    {
+        return (string) (is_object($source) ? $source->id : ($source['id'] ?? ''));
+    }
+}

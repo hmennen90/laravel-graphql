@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Hmennen90\GraphQL;
 
+use Hmennen90\GraphQL\Console\MakeDirectiveCommand;
+use Hmennen90\GraphQL\Console\MakeTypeCommand;
 use Hmennen90\GraphQL\Console\PrintSchemaCommand;
 use Hmennen90\GraphQL\Console\SubscriptionServerCommand;
+use Hmennen90\GraphQL\Console\ValidateSchemaCommand;
 use Hmennen90\GraphQL\Engine\Schema\Schema;
 use Hmennen90\GraphQL\Execution\ErrorHandler;
 use Hmennen90\GraphQL\Http\Controllers\GraphiQLController;
@@ -142,7 +145,14 @@ final class GraphQLServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->publishes([__DIR__.'/../config/graphql.php' => $this->app->configPath('graphql.php')], 'graphql-config');
             $this->publishes([__DIR__.'/../resources/views' => $this->app->resourcePath('views/vendor/graphql')], 'graphql-views');
-            $this->commands([PrintSchemaCommand::class, SubscriptionServerCommand::class]);
+            $this->publishes([__DIR__.'/Console/stubs' => $this->app->basePath('stubs/graphql')], 'graphql-stubs');
+            $this->commands([
+                PrintSchemaCommand::class,
+                ValidateSchemaCommand::class,
+                SubscriptionServerCommand::class,
+                MakeTypeCommand::class,
+                MakeDirectiveCommand::class,
+            ]);
         }
     }
 

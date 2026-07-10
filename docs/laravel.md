@@ -17,6 +17,30 @@ return [
 ];
 ```
 
+## Artisan commands
+
+```bash
+php artisan graphql:print                 # print the schema as SDL
+php artisan graphql:print --write         # write SDL to base_path/schema.graphql
+php artisan graphql:print --write=docs/schema.graphql
+php artisan graphql:validate              # validate the configured schema (CI guard)
+php artisan graphql:subscriptions:serve   # run the graphql-ws WebSocket server (Swoole)
+
+php artisan make:graphql-type UserType         # scaffold a code-first type
+php artisan make:graphql-directive UppercaseDirective  # scaffold a build-time directive
+```
+
+`vendor:publish` exposes the config and views (and command stubs):
+
+```bash
+php artisan vendor:publish --tag=graphql-config
+php artisan vendor:publish --tag=graphql-views
+php artisan vendor:publish --tag=graphql-stubs   # customise make:graphql-* output
+```
+
+Published stubs land in `stubs/graphql/` and take precedence over the package's
+built-in stubs.
+
 ## Endpoint
 
 `POST /graphql` accepts a single operation or a batched array:
