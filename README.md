@@ -285,7 +285,8 @@ $subgraph = Federation::subgraph($schema, [
 ```
 
 This adds `_service { sdl }`, `_entities(representations:)` and the `_Any`/`_Service`/
-`_Entity` types, wiring one reference resolver per entity type.
+`_Entity` types, wiring one reference resolver per entity type. See
+[Apollo Federation](docs/federation.md).
 
 ---
 
@@ -457,6 +458,8 @@ type Mutation {
 - `@validator(class:)` — validate all arguments via a class exposing `rules()`.
 - `@trim` — strip surrounding whitespace; `@hash` — bcrypt a value; `@globalId` —
   decode a Relay global id down to its raw key.
+
+See [Validation & argument sanitisers](docs/validation.md) for the full reference.
 
 ### Error masking
 

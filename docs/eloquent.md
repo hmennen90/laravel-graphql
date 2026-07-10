@@ -80,32 +80,11 @@ with `key:`).
 The `graphql:print` Artisan command prints the built schema as SDL
 (`Hmennen90\GraphQL\Engine\Schema\SchemaPrinter`).
 
-## Validation & argument sanitisers
+## Validation & sanitisers
 
-Directives on a field *argument* run before the resolver, transforming or rejecting
-the value:
-
-```graphql
-type Mutation {
-  register(
-    email: String @rules(apply: ["required", "email"])
-    name: String @trim
-    password: String @hash
-  ): User @create
-
-  updatePost(id: ID @globalId, title: String): Post
-    @update
-    @validator(class: "App\\GraphQL\\Validators\\UpdatePostValidator")
-}
-```
-
-| Directive | Effect |
-|---|---|
-| `@rules(apply: [...])` | validate one argument with Laravel rules; failure → `ValidationException` |
-| `@validator(class:)` | validate all arguments via a class exposing `rules()` (and optionally `messages()`) |
-| `@trim` | strip leading/trailing whitespace from a string argument |
-| `@hash` | bcrypt-hash a string argument (e.g. a password) |
-| `@globalId` | decode a Relay global id (`base64("Type:id")`) down to its raw key |
+Argument directives — `@rules`, `@validator`, `@trim`, `@hash`, `@globalId` — validate
+or sanitise input before the resolver runs and compose with the mutation directives.
+See [Validation & argument sanitisers](validation.md).
 
 ## Code-first attributes
 
@@ -139,21 +118,5 @@ $types = (new AttributeSchemaBuilder($directives))->build([QueryType::class, Use
 
 ## Apollo Federation
 
-Turn any schema into a federated subgraph with `Federation::subgraph()`. It adds the
-`_service { sdl }` and `_entities(representations: [_Any!]!)` query fields plus the
-`_Any`, `_Service` and `_Entity` types, and wires a reference resolver per entity type:
-
-```php
-use Hmennen90\GraphQL\Federation\Federation;
-
-$subgraph = Federation::subgraph($schema, [
-    'User' => [
-        'model'   => \App\Models\User::class,
-        'resolve' => fn (array $representation) => \App\Models\User::find($representation['id']),
-    ],
-]);
-```
-
-The gateway calls `_entities` with `{ __typename, ...keyFields }` representations; each is
-routed to the matching resolver and the returned model is resolved into its object type.
-`_service.sdl` exposes the subgraph SDL via the schema printer.
+Any schema can be exposed as a federated subgraph via `Federation::subgraph()`. See
+[Apollo Federation](federation.md).

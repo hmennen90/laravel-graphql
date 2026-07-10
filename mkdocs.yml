@@ -49,4 +49,6 @@ nav:
   - Schema (SDL): schema-sdl.md
   - Laravel Integration: laravel.md
   - Eloquent Directives: eloquent.md
+  - Validation & Sanitisers: validation.md
+  - Apollo Federation: federation.md
   - Comparison: comparison.md
