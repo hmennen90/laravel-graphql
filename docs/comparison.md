@@ -19,6 +19,7 @@ mature than long-standing projects.
 |---|---|---|---|---|
 | Primary approach | SDL-first | code-first (classes) | code-first (library) | **hybrid: SDL + code-first + attributes** |
 | Single source of truth | ❌ SDL + model (+ directives) | ⚠️ class per type | n/a | ✅ define a type once |
+| Generate types from models/requests/JSON | ⚠️ some directives | ❌ | n/a | ✅ model + FormRequest + response generators |
 | GraphQL engine | webonyx | webonyx | is the engine | **own, hand-written** |
 | Extra runtime deps | webonyx + more | webonyx | — | **none beyond illuminate** |
 | Laravel integration | ✅ first-class | ✅ first-class | ❌ | ✅ first-class |

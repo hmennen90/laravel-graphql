@@ -37,6 +37,20 @@ resolvers through the execution context, delegating to Laravel Gates/policies.
 Argument validation integrates with Laravel's validator; failures surface under
 `extensions.validation` in the error response.
 
+## Generating types from your app
+
+Derive GraphQL types from existing Laravel artifacts instead of re-declaring them:
+
+- `Generation\ModelTypeGenerator::fromModel(User::class)` — object type from an Eloquent
+  model's key, fillable attributes, casts and timestamps.
+- `Generation\ValidationInputGenerator::fromRequest(StoreUserRequest::class)` /
+  `->fromRules([...])` — input type from validation rules (`required` → non-null).
+- `Generation\ResponseTypeGenerator::fromArray($resource->toArray($request), 'UserResource')`
+  — object type inferred from a JSON resource / response shape (nested arrays → nested types).
+
+`array`/`json` casts and `array` rules map to a bundled `JSON` scalar. See the README for a
+full end-to-end example composing generated types into a schema.
+
 ## File uploads
 
 Add the `Upload` scalar (`Hmennen90\GraphQL\Support\UploadType::make()`) to your

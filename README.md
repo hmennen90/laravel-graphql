@@ -212,6 +212,66 @@ extend type Query { world: String! }
 
 ---
 
+## Generating types from your Laravel app
+
+The strongest form of "single source of truth": derive GraphQL types from the
+artifacts you already maintain — Eloquent models, FormRequest rules and JSON
+responses — instead of re-declaring their shape.
+
+```php
+use Hmennen90\GraphQL\Generation\ModelTypeGenerator;
+use Hmennen90\GraphQL\Generation\ValidationInputGenerator;
+use Hmennen90\GraphQL\Generation\ResponseTypeGenerator;
+
+// 1. Object type from an Eloquent model (primary key, fillable, casts, timestamps)
+$userType = (new ModelTypeGenerator())->fromModel(\App\Models\User::class);
+//   -> type User { id: ID!  name: String  active: Boolean  meta: JSON  created_at: String ... }
+
+// 2. Input type from a FormRequest's validation rules ("required" -> non-null)
+$createUserInput = (new ValidationInputGenerator())
+    ->fromRequest(\App\Http\Requests\StoreUserRequest::class, 'CreateUserInput');
+//   from ['name' => 'required|string', 'age' => 'integer'] -> input CreateUserInput { name: String!  age: Int }
+
+// ...or straight from a rules array:
+$filterInput = (new ValidationInputGenerator())->fromRules([
+    'term' => 'required|string',
+    'limit' => 'integer',
+], 'FilterInput');
+
+// 3. Object type inferred from a JSON resource / response shape
+$sample = (new \App\Http\Resources\UserResource($user))->toArray(request());
+$userResourceType = (new ResponseTypeGenerator())->fromArray($sample, 'UserResource');
+```
+
+Compose the generated types into a schema like any hand-built type:
+
+```php
+use Hmennen90\GraphQL\Engine\Schema\Schema;
+use Hmennen90\GraphQL\Engine\Schema\SchemaConfig;
+use Hmennen90\GraphQL\Engine\Type\Definition\{Argument, FieldDefinition, ObjectType, Type};
+
+$query = new ObjectType('Query', [
+    FieldDefinition::make('user', $userType,
+        args: [Argument::make('id', Type::nonNull(Type::id()))],
+        resolve: fn ($root, array $args) => \App\Models\User::find($args['id'])),
+]);
+
+$mutation = new ObjectType('Mutation', [
+    FieldDefinition::make('createUser', $userType,
+        args: [Argument::make('input', Type::nonNull($createUserInput))],
+        resolve: fn ($root, array $args) => \App\Models\User::create($args['input'])),
+]);
+
+$schema = new Schema(new SchemaConfig(query: $query, mutation: $mutation, types: [$userResourceType]));
+```
+
+> Mapping notes: model casts and rule tokens map to the built-in scalars; `array`/`json`
+> casts and `array` rules use a bundled `JSON` scalar. Nested resource arrays become nested
+> object types. Generators produce a starting point you can refine — add relations, hide
+> fields, or wrap the returned types as needed.
+
+---
+
 ## Executing standalone (without Laravel)
 
 The engine has no framework dependency:
