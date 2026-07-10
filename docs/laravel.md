@@ -251,7 +251,16 @@ endpoint — it streams over plain HTTP:
 ```
 
 A query or mutation POSTed to the endpoint streams one `next` frame then `complete`. For
-live subscriptions, bind `Hmennen90\GraphQL\Subscriptions\Sse\EventStream` to a
-Redis-backed implementation whose `listen($topic)` yields events as they are published;
-the controller writes each as a `next` frame until the client disconnects. The transport
-core (`SseProtocolHandler`) is transport-agnostic and unit-tested.
+live subscriptions, bind `EventStream` to the shipped `RedisEventStream` (blocks on a
+per-topic Redis list and yields events):
+
+```php
+use Hmennen90\GraphQL\Subscriptions\Sse\{EventStream, RedisEventStream};
+
+$this->app->bind(EventStream::class, fn () => new RedisEventStream('default'));
+```
+
+Publish events to the topic with
+`Redis::connection('default')->rpush("graphql:sse:$topic", json_encode($event))` — the
+controller writes each as a `next` frame until the client disconnects. The transport
+core (`SseProtocolHandler`) and the stream loop are unit-tested.
