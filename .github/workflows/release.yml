@@ -1,0 +1,48 @@
+name: Release
+
+# Releases are cut manually via workflow dispatch (semantic-release derives the
+# next version from Conventional Commits since the last tag).
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Run semantic-release in dry-run mode (no tag/release).'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: semantic-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install semantic-release
+        run: |
+          npm install --no-save \
+            semantic-release@24 \
+            @semantic-release/changelog@6 \
+            @semantic-release/git@10 \
+            conventional-changelog-conventionalcommits@8
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release ${{ inputs.dry-run && '--dry-run' || '' }}
