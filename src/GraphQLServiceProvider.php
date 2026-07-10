@@ -100,6 +100,8 @@ final class GraphQLServiceProvider extends ServiceProvider
                 $registry->register($relationName, $relation);
             }
             $registry->register('count', new \Hmennen90\GraphQL\Directives\Eloquent\CountDirective());
+            $registry->register('orderBy', new \Hmennen90\GraphQL\Directives\Eloquent\OrderByDirective());
+            $registry->register('whereConditions', new \Hmennen90\GraphQL\Directives\Eloquent\WhereConditionsDirective());
             $registry->register('can', new \Hmennen90\GraphQL\Directives\CanDirective());
             $registry->register('cacheControl', new \Hmennen90\GraphQL\Directives\CacheControlDirective());
 

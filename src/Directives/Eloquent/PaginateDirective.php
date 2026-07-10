@@ -6,6 +6,7 @@ namespace Hmennen90\GraphQL\Directives\Eloquent;
 
 use Hmennen90\GraphQL\Eloquent\ModelResolver;
 use Hmennen90\GraphQL\Eloquent\Pagination\PaginatorTypes;
+use Hmennen90\GraphQL\Eloquent\Query\QueryModifiers;
 use Hmennen90\GraphQL\Engine\Building\SchemaBuildContext;
 use Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode;
 use Hmennen90\GraphQL\Engine\Type\Definition\Argument;
@@ -52,7 +53,7 @@ final readonly class PaginateDirective extends EloquentDirective
                     $first = min(is_int($args['first'] ?? null) ? $args['first'] : $default, $max);
 
                     return Relay::connectionFromArray(
-                        $modelClass::query()->get()->all(),
+                        QueryModifiers::apply($modelClass::query(), $args)->get()->all(),
                         ['first' => $first, 'after' => $args['after'] ?? null],
                     );
                 },
@@ -70,7 +71,8 @@ final readonly class PaginateDirective extends EloquentDirective
             static function ($root, array $args) use ($modelClass, $default, $max): array {
                 $first = min(is_int($args['first'] ?? null) ? $args['first'] : $default, $max);
                 $page = is_int($args['page'] ?? null) ? $args['page'] : 1;
-                $paginator = $modelClass::query()->paginate(max($first, 1), ['*'], 'page', max($page, 1));
+                $paginator = QueryModifiers::apply($modelClass::query(), $args)
+                    ->paginate(max($first, 1), ['*'], 'page', max($page, 1));
 
                 return [
                     'data' => $paginator->items(),

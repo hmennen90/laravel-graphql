@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hmennen90\GraphQL\Directives\Eloquent;
 
+use Hmennen90\GraphQL\Eloquent\Query\QueryModifiers;
 use Hmennen90\GraphQL\Engine\Building\SchemaBuildContext;
 use Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode;
 use Hmennen90\GraphQL\Engine\Type\Definition\FieldDefinition;
@@ -21,7 +22,7 @@ final readonly class AllDirective extends EloquentDirective
         return FieldDefinition::make(
             $field->getName(),
             $field->getType(),
-            static fn (): array => $modelClass::query()->get()->all(),
+            static fn ($root, array $args): array => QueryModifiers::apply($modelClass::query(), $args)->get()->all(),
             array_values($field->args()),
             $field->description(),
             $field->deprecationReason(),
