@@ -17,7 +17,7 @@ use Hmennen90\GraphQL\Engine\Type\Definition\FieldDefinition;
  */
 final class CacheControlDirective implements SchemaDirective
 {
-    public function applyToField(FieldDefinition $field, DirectiveNode $node): FieldDefinition
+    public function applyToField(FieldDefinition $field, DirectiveNode $node, \Hmennen90\GraphQL\Engine\Building\SchemaBuildContext $context): FieldDefinition
     {
         $metadata = [
             'cacheMaxAge' => $this->maxAge($node),

@@ -19,7 +19,7 @@ use Hmennen90\GraphQL\Execution\Context;
  */
 final class CanDirective implements SchemaDirective
 {
-    public function applyToField(FieldDefinition $field, DirectiveNode $node): FieldDefinition
+    public function applyToField(FieldDefinition $field, DirectiveNode $node, \Hmennen90\GraphQL\Engine\Building\SchemaBuildContext $context): FieldDefinition
     {
         $ability = $this->ability($node);
         $resolver = $field->getResolver() ?? new DefaultFieldResolver();

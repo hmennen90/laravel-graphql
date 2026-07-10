@@ -33,7 +33,7 @@ final class UppercaseMiddleware implements DirectiveMiddleware
 
 final class UppercaseSchemaDirective implements SchemaDirective
 {
-    public function applyToField(FieldDefinition $field, DirectiveNode $node): FieldDefinition
+    public function applyToField(FieldDefinition $field, DirectiveNode $node, \Hmennen90\GraphQL\Engine\Building\SchemaBuildContext $context): FieldDefinition
     {
         $original = $field->getResolver();
 

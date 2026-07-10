@@ -28,6 +28,7 @@ use Hmennen90\GraphQL\Engine\Language\AST\StringValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\TypeNode;
 use Hmennen90\GraphQL\Engine\Language\AST\UnionTypeDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\ValueNode;
+use Hmennen90\GraphQL\Engine\Building\SchemaBuildContext;
 use Hmennen90\GraphQL\Engine\Schema\Schema;
 use Hmennen90\GraphQL\Engine\Schema\SchemaConfig;
 use Hmennen90\GraphQL\Engine\Type\Definition\Argument;
@@ -107,6 +108,17 @@ final class AstToSchema
             $this->types[$name] = $this->createType($definition);
         }
 
+        // Force lazy field resolution so build-time directives (which run inside the
+        // field closures) can register additional generated types before the schema
+        // captures its type list.
+        if ($this->schemaDirectives !== []) {
+            foreach (array_values($this->types) as $type) {
+                if ($type instanceof ObjectType || $type instanceof InterfaceType || $type instanceof InputObjectType) {
+                    $type->fields();
+                }
+            }
+        }
+
         return new Schema(new SchemaConfig(
             query: $this->rootType(OperationType::QUERY, 'Query'),
             mutation: $this->rootType(OperationType::MUTATION, 'Mutation'),
@@ -114,6 +126,18 @@ final class AstToSchema
             types: array_values($this->types),
             description: $this->schemaDefinition?->description,
         ));
+    }
+
+    private function buildContext(string $parentTypeName, string $fieldName): SchemaBuildContext
+    {
+        return new SchemaBuildContext(
+            function (Type&NamedType $type): void {
+                $this->types[$type->name()] ??= $type;
+            },
+            fn (string $name): (Type&NamedType)|null => $this->types[$name] ?? null,
+            $parentTypeName,
+            $fieldName,
+        );
     }
 
     private function applyExtension(
@@ -314,7 +338,7 @@ final class AstToSchema
             foreach ($fieldNode->directives as $directiveNode) {
                 $directive = $this->schemaDirectives[$directiveNode->name] ?? null;
                 if ($directive instanceof SchemaDirective) {
-                    $field = $directive->applyToField($field, $directiveNode);
+                    $field = $directive->applyToField($field, $directiveNode, $this->buildContext($typeName, $fieldNode->name));
                 }
             }
 
