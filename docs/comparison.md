@@ -27,6 +27,8 @@ mature than long-standing projects.
 | Query / mutation | ✅ | ✅ | ✅ | ✅ |
 | Subscriptions | ✅ full (Pusher/Echo) | ⚠️ limited | n/a | ✅ broadcasting (Reverb/Pusher) |
 | Query batching | ✅ | ✅ | n/a | ✅ |
+| N+1 batching (DataLoader) | ✅ | ⚠️ | ✅ (deferred) | ✅ built-in DataLoader |
+| Depth / complexity limits | ✅ | ⚠️ | ✅ | ✅ configurable |
 | GraphiQL | ✅ (plugin) | ✅ | n/a | ✅ bundled |
 | Validation rules | comprehensive | via webonyx | comprehensive | comprehensive spec set |
 | Custom directives | ✅ many | ⚠️ some | via engine | ✅ runtime + SDL build-time |

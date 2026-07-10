@@ -61,6 +61,9 @@ final class DocumentValidator
     /** @var array<int, array{type: Type, name: string, node: Node}> */
     private array $variableUsages = [];
 
+    /** @var array<string, int> */
+    private array $options = [];
+
     private function __construct(private readonly Schema $schema, private readonly DocumentNode $document)
     {
         foreach ($document->definitions as $definition) {
@@ -71,11 +74,13 @@ final class DocumentValidator
     }
 
     /**
+     * @param  array<string, int>  $options  Optional limits: maxDepth, maxComplexity.
      * @return array<int, GraphQLError>
      */
-    public static function validate(Schema $schema, DocumentNode $document): array
+    public static function validate(Schema $schema, DocumentNode $document, array $options = []): array
     {
         $validator = new self($schema, $document);
+        $validator->options = $options;
         $validator->run();
 
         return $validator->errors;
@@ -96,6 +101,82 @@ final class DocumentValidator
 
         $this->checkFragmentUsage();
         $this->checkFragmentCycles();
+        $this->checkLimits();
+    }
+
+    private function checkLimits(): void
+    {
+        $maxDepth = $this->options['maxDepth'] ?? 0;
+        $maxComplexity = $this->options['maxComplexity'] ?? 0;
+
+        if ($maxDepth <= 0 && $maxComplexity <= 0) {
+            return;
+        }
+
+        foreach ($this->document->definitions as $definition) {
+            if (! $definition instanceof OperationDefinitionNode) {
+                continue;
+            }
+
+            if ($maxDepth > 0) {
+                $depth = $this->selectionDepth($definition->selectionSet, []);
+                if ($depth > $maxDepth) {
+                    $this->error(sprintf('Query depth %d exceeds the maximum allowed depth of %d.', $depth, $maxDepth), $definition);
+                }
+            }
+
+            if ($maxComplexity > 0) {
+                $complexity = $this->selectionComplexity($definition->selectionSet, []);
+                if ($complexity > $maxComplexity) {
+                    $this->error(sprintf('Query complexity %d exceeds the maximum allowed complexity of %d.', $complexity, $maxComplexity), $definition);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, true>  $visited
+     */
+    private function selectionDepth(SelectionSetNode $set, array $visited): int
+    {
+        $max = 0;
+        foreach ($set->selections as $selection) {
+            if ($selection instanceof FieldNode) {
+                $depth = 1 + ($selection->selectionSet !== null ? $this->selectionDepth($selection->selectionSet, $visited) : 0);
+            } elseif ($selection instanceof InlineFragmentNode) {
+                $depth = $this->selectionDepth($selection->selectionSet, $visited);
+            } elseif ($selection instanceof FragmentSpreadNode
+                && isset($this->fragments[$selection->name])
+                && ! isset($visited[$selection->name])) {
+                $depth = $this->selectionDepth($this->fragments[$selection->name]->selectionSet, [...$visited, $selection->name => true]);
+            } else {
+                $depth = 0;
+            }
+            $max = max($max, $depth);
+        }
+
+        return $max;
+    }
+
+    /**
+     * @param  array<string, true>  $visited
+     */
+    private function selectionComplexity(SelectionSetNode $set, array $visited): int
+    {
+        $total = 0;
+        foreach ($set->selections as $selection) {
+            if ($selection instanceof FieldNode) {
+                $total += 1 + ($selection->selectionSet !== null ? $this->selectionComplexity($selection->selectionSet, $visited) : 0);
+            } elseif ($selection instanceof InlineFragmentNode) {
+                $total += $this->selectionComplexity($selection->selectionSet, $visited);
+            } elseif ($selection instanceof FragmentSpreadNode
+                && isset($this->fragments[$selection->name])
+                && ! isset($visited[$selection->name])) {
+                $total += $this->selectionComplexity($this->fragments[$selection->name]->selectionSet, [...$visited, $selection->name => true]);
+            }
+        }
+
+        return $total;
     }
 
     private function validateOperation(OperationDefinitionNode $operation): void

@@ -70,7 +70,7 @@ final class GraphQL
             return ExecutionResult::withErrors([$e]);
         }
 
-        $errors = DocumentValidator::validate($this->schema(), $document);
+        $errors = DocumentValidator::validate($this->schema(), $document, $this->validationOptions());
         if ($errors !== []) {
             return ExecutionResult::withErrors($errors);
         }
@@ -111,6 +111,23 @@ final class GraphQL
         }
 
         return new OperationAnalysis(false, null);
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function validationOptions(): array
+    {
+        $security = is_array($this->config['security'] ?? null) ? $this->config['security'] : [];
+        $options = [];
+        if (isset($security['max_depth']) && is_int($security['max_depth'])) {
+            $options['maxDepth'] = $security['max_depth'];
+        }
+        if (isset($security['max_complexity']) && is_int($security['max_complexity'])) {
+            $options['maxComplexity'] = $security['max_complexity'];
+        }
+
+        return $options;
     }
 
     private function buildSchema(): Schema
