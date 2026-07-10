@@ -65,7 +65,7 @@ final class AstToSchema
     private ?SchemaDefinitionNode $schemaDefinition = null;
 
     /**
-     * @param  array<string, SchemaDirective|ArgumentDirective>  $schemaDirectives
+     * @param  array<string, SchemaDirective|ArgumentDirective|ArgBuilderDirective>  $schemaDirectives
      */
     public function __construct(
         private readonly DocumentNode $document,
@@ -335,6 +335,7 @@ final class AstToSchema
                 $this->resolvers->resolver($typeName, $fieldNode->name),
                 $args,
                 $fieldNode->description,
+                metadata: $this->collectArgBuilders($fieldNode),
             );
 
             foreach ($fieldNode->directives as $directiveNode) {
@@ -350,6 +351,33 @@ final class AstToSchema
         }
 
         return $fields;
+    }
+
+    /**
+     * Collects {@see ArgBuilderDirective}s on the field's arguments into resolver
+     * metadata (`graphql.argBuilders`), so a query-building field directive (`@all`,
+     * `@paginate`, …) can apply them to its Eloquent builder at resolve time.
+     *
+     * @return array<string, mixed>
+     */
+    private function collectArgBuilders(FieldDefinitionNode $fieldNode): array
+    {
+        $builders = [];
+        foreach ($fieldNode->arguments as $argNode) {
+            foreach ($argNode->directives as $directiveNode) {
+                $directive = $this->schemaDirectives[$directiveNode->name] ?? null;
+                if (! $directive instanceof ArgBuilderDirective) {
+                    continue;
+                }
+                $apply = $directive->toBuilder($directiveNode, $argNode->name);
+                $argName = $argNode->name;
+                $builders[] = static fn (mixed $builder, array $values): mixed => array_key_exists($argName, $values)
+                    ? $apply($builder, $values[$argName])
+                    : $builder;
+            }
+        }
+
+        return $builders === [] ? [] : ['graphql.argBuilders' => $builders];
     }
 
     /**

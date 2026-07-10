@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hmennen90\GraphQL\Directives;
 
+use Hmennen90\GraphQL\Engine\Building\SchemaFirst\ArgBuilderDirective;
 use Hmennen90\GraphQL\Engine\Building\SchemaFirst\ArgumentDirective;
 use Hmennen90\GraphQL\Engine\Building\SchemaFirst\SchemaDirective;
 
@@ -16,10 +17,10 @@ use Hmennen90\GraphQL\Engine\Building\SchemaFirst\SchemaDirective;
  */
 final class DirectiveRegistry
 {
-    /** @var array<string, SchemaDirective|ArgumentDirective> */
+    /** @var array<string, SchemaDirective|ArgumentDirective|ArgBuilderDirective> */
     private array $directives = [];
 
-    public function register(string $name, SchemaDirective|ArgumentDirective $directive): void
+    public function register(string $name, SchemaDirective|ArgumentDirective|ArgBuilderDirective $directive): void
     {
         $this->directives[$name] = $directive;
     }
@@ -30,7 +31,7 @@ final class DirectiveRegistry
     }
 
     /**
-     * @return array<string, SchemaDirective|ArgumentDirective>
+     * @return array<string, SchemaDirective|ArgumentDirective|ArgBuilderDirective>
      */
     public function all(): array
     {

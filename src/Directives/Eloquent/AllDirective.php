@@ -18,11 +18,15 @@ final readonly class AllDirective extends EloquentDirective
     public function applyToField(FieldDefinition $field, DirectiveNode $node, SchemaBuildContext $context): FieldDefinition
     {
         $modelClass = $this->modelClass($node, $field);
+        $builders = self::argBuilders($field);
 
         return FieldDefinition::make(
             $field->getName(),
             $field->getType(),
-            static fn ($root, array $args): array => QueryModifiers::apply($modelClass::query(), $args)->get()->all(),
+            static fn ($root, array $args): array => QueryModifiers::apply(
+                self::applyArgBuilders($modelClass::query(), $args, $builders),
+                $args,
+            )->get()->all(),
             array_values($field->args()),
             $field->description(),
             $field->deprecationReason(),

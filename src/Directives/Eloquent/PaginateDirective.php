@@ -42,6 +42,7 @@ final readonly class PaginateDirective extends EloquentDirective
         $style = strtoupper($this->stringArg($node, 'type') ?? 'PAGINATOR');
         $default = $this->defaultCount;
         $max = $this->maxCount;
+        $builders = self::argBuilders($field);
 
         if ($style === 'CONNECTION') {
             $connection = $this->register($context, $node1->name().'Connection', fn (): ObjectType => Relay::connectionType($node1));
@@ -49,11 +50,11 @@ final readonly class PaginateDirective extends EloquentDirective
             return FieldDefinition::make(
                 $field->getName(),
                 Type::nonNull($connection),
-                static function ($root, array $args) use ($modelClass, $default, $max): array {
+                static function ($root, array $args) use ($modelClass, $default, $max, $builders): array {
                     $first = min(is_int($args['first'] ?? null) ? $args['first'] : $default, $max);
 
                     return Relay::connectionFromArray(
-                        QueryModifiers::apply($modelClass::query(), $args)->get()->all(),
+                        QueryModifiers::apply(self::applyArgBuilders($modelClass::query(), $args, $builders), $args)->get()->all(),
                         ['first' => $first, 'after' => $args['after'] ?? null],
                     );
                 },
@@ -68,10 +69,10 @@ final readonly class PaginateDirective extends EloquentDirective
         return FieldDefinition::make(
             $field->getName(),
             Type::nonNull($paginator),
-            static function ($root, array $args) use ($modelClass, $default, $max): array {
+            static function ($root, array $args) use ($modelClass, $default, $max, $builders): array {
                 $first = min(is_int($args['first'] ?? null) ? $args['first'] : $default, $max);
                 $page = is_int($args['page'] ?? null) ? $args['page'] : 1;
-                $paginator = QueryModifiers::apply($modelClass::query(), $args)
+                $paginator = QueryModifiers::apply(self::applyArgBuilders($modelClass::query(), $args, $builders), $args)
                     ->paginate(max($first, 1), ['*'], 'page', max($page, 1));
 
                 return [

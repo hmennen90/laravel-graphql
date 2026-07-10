@@ -112,6 +112,17 @@ final class GraphQLServiceProvider extends ServiceProvider
             $registry->register('orderBy', new \Hmennen90\GraphQL\Directives\Eloquent\OrderByDirective());
             $registry->register('whereConditions', new \Hmennen90\GraphQL\Directives\Eloquent\WhereConditionsDirective());
 
+            // Single-argument query-builder directives.
+            $registry->register('eq', new \Hmennen90\GraphQL\Directives\Eloquent\EqDirective());
+            $registry->register('neq', new \Hmennen90\GraphQL\Directives\Eloquent\NeqDirective());
+            $registry->register('like', new \Hmennen90\GraphQL\Directives\Eloquent\LikeDirective());
+            $registry->register('in', new \Hmennen90\GraphQL\Directives\Eloquent\InDirective());
+            $registry->register('notIn', new \Hmennen90\GraphQL\Directives\Eloquent\NotInDirective());
+            $registry->register('whereBetween', new \Hmennen90\GraphQL\Directives\Eloquent\WhereBetweenDirective());
+            $registry->register('whereNull', new \Hmennen90\GraphQL\Directives\Eloquent\WhereNullDirective());
+            $registry->register('scope', new \Hmennen90\GraphQL\Directives\Eloquent\ScopeDirective());
+            $registry->register('limit', new \Hmennen90\GraphQL\Directives\Eloquent\LimitDirective());
+
             $registry->register('guard', new \Hmennen90\GraphQL\Directives\GuardDirective());
             $registry->register('inject', new \Hmennen90\GraphQL\Directives\InjectDirective());
             $registry->register('rename', new \Hmennen90\GraphQL\Directives\RenameDirective());
