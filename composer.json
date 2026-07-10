@@ -3,13 +3,20 @@
     "description": "A hand-written GraphQL engine with first-class Laravel integration (code-first + SDL).",
     "type": "library",
     "license": "MIT",
-    "keywords": ["laravel", "graphql", "api", "schema"],
+    "keywords": ["laravel", "graphql", "api", "schema", "subscriptions", "dataloader"],
+    "homepage": "https://github.com/hmennen90/laravel-graphql",
     "authors": [
         {
             "name": "hmennen90",
-            "email": "hmennen90@gmail.com"
+            "email": "hmennen90@gmail.com",
+            "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/hmennen90/laravel-graphql/issues",
+        "source": "https://github.com/hmennen90/laravel-graphql",
+        "docs": "https://hmennen90.github.io/laravel-graphql/"
+    },
     "require": {
         "php": "^8.4",
         "illuminate/support": "^11.0 || ^12.0",

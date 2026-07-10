@@ -1,0 +1,39 @@
+name: Bug report
+description: Report a reproducible problem
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal schema + query (and variables) that reproduce the issue.
+      render: graphql
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual vs expected result
+      description: The JSON response you got and the one you expected.
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+    validations:
+      required: true
+  - type: input
+    id: php-laravel
+    attributes:
+      label: PHP / Laravel version
+    validations:
+      required: true
