@@ -388,9 +388,14 @@ error handling, security limits, persisted queries, cache-control and subscripti
 ```bash
 php artisan graphql:print [--write[=path]]   # export the schema as SDL
 php artisan graphql:validate                 # validate the schema (CI guard)
-php artisan graphql:subscriptions:serve      # graphql-ws WebSocket server (Swoole)
-php artisan make:graphql-type UserType       # scaffold a code-first type
-php artisan make:graphql-directive FooDirective   # scaffold a build-time directive
+php artisan graphql:cache                     # cache the parsed SDL for faster boots
+php artisan graphql:clear                     # drop schema cache + APQ entries
+php artisan graphql:subscriptions:serve       # graphql-ws WebSocket server (Swoole)
+php artisan make:graphql-type UserType        # code-first type
+php artisan make:graphql-directive FooDirective   # build-time directive
+php artisan make:graphql-scalar DateType      # custom scalar
+php artisan make:graphql-query FetchUser      # single-field query resolver
+php artisan make:graphql-mutation CreateUser  # single-field mutation resolver
 ```
 
 ### The `GraphQL` facade

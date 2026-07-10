@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hmennen90\GraphQL\Engine\Building\SchemaFirst;
 
+use Hmennen90\GraphQL\Engine\Language\AST\DocumentNode;
 use Hmennen90\GraphQL\Engine\Language\Parser;
 use Hmennen90\GraphQL\Engine\Language\Source;
 use Hmennen90\GraphQL\Engine\Schema\Schema;
@@ -22,8 +23,22 @@ final class SchemaBuilder
         array $typeResolvers = [],
         array $schemaDirectives = [],
     ): Schema {
-        $document = Parser::parse($sdl);
+        return self::fromDocument(Parser::parse($sdl), $resolvers, $typeResolvers, $schemaDirectives);
+    }
 
+    /**
+     * Build from an already-parsed document (e.g. a cached AST).
+     *
+     * @param  array<string, array<string, callable>>  $resolvers
+     * @param  array<string, callable>  $typeResolvers
+     * @param  array<string, SchemaDirective|ArgumentDirective>  $schemaDirectives
+     */
+    public static function fromDocument(
+        DocumentNode $document,
+        array $resolvers = [],
+        array $typeResolvers = [],
+        array $schemaDirectives = [],
+    ): Schema {
         return new AstToSchema($document, new ResolverMap($resolvers, $typeResolvers), $schemaDirectives)->build();
     }
 }

@@ -14,6 +14,7 @@ use Hmennen90\GraphQL\Engine\Executor\Executor;
 use Hmennen90\GraphQL\Engine\Language\AST\FieldNode;
 use Hmennen90\GraphQL\Engine\Language\AST\OperationDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\OperationType;
+use Hmennen90\GraphQL\Engine\Language\AST\DocumentNode;
 use Hmennen90\GraphQL\Engine\Language\Parser;
 use Hmennen90\GraphQL\Engine\Schema\Schema;
 use Hmennen90\GraphQL\Engine\Validation\DocumentValidator;
@@ -162,11 +163,64 @@ final class GraphQL
             $resolvers = is_array($schemaConfig['resolvers'] ?? null) ? $schemaConfig['resolvers'] : [];
 
             $registry = $this->container->make(DirectiveRegistry::class);
+            $document = $this->document($sdl, $schemaConfig['cache'] ?? null);
 
-            return SchemaBuilder::fromSdl($sdl, $resolvers, schemaDirectives: $registry->all());
+            return SchemaBuilder::fromDocument($document, $resolvers, schemaDirectives: $registry->all());
         }
 
         throw new RuntimeException('No GraphQL schema is configured. Set graphql.schema.factory or graphql.schema.sdl_path.');
+    }
+
+    /** Parse the SDL, using a cached AST when schema caching is enabled and present. */
+    private function document(string $sdl, mixed $cache): DocumentNode
+    {
+        $path = $this->schemaCachePath($cache);
+        if ($path !== null && is_file($path)) {
+            $blob = file_get_contents($path);
+            if ($blob !== false) {
+                $document = @unserialize($blob);
+                if ($document instanceof DocumentNode) {
+                    return $document;
+                }
+            }
+        }
+
+        return Parser::parse($sdl);
+    }
+
+    private function schemaCachePath(mixed $cache): ?string
+    {
+        if (! is_array($cache) || ($cache['enabled'] ?? false) !== true) {
+            return null;
+        }
+
+        return is_string($cache['path'] ?? null) ? $cache['path'] : null;
+    }
+
+    /**
+     * Compile the SDL schema and write its parsed AST to the cache file.
+     * Returns the written path, or null if caching does not apply (no SDL schema
+     * or no configured path).
+     */
+    public function cacheSchema(): ?string
+    {
+        /** @var array<string, mixed> $schemaConfig */
+        $schemaConfig = is_array($this->config['schema'] ?? null) ? $this->config['schema'] : [];
+
+        $cache = $schemaConfig['cache'] ?? null;
+        $path = is_array($cache) && is_string($cache['path'] ?? null) ? $cache['path'] : null;
+        $sdl = $this->readSdl($schemaConfig['sdl_path'] ?? []);
+        if ($sdl === '' || $path === null) {
+            return null;
+        }
+
+        $directory = dirname($path);
+        if (! is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        file_put_contents($path, serialize(Parser::parse($sdl)));
+
+        return $path;
     }
 
     private function readSdl(mixed $paths): string

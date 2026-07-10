@@ -47,7 +47,8 @@ mature than long-standing projects.
 | Code-first attribute directives | ❌ (SDL only) | n/a | n/a | ✅ `#[All]`/`#[Paginate]`… (same impl. as SDL) |
 | Federation | ✅ v2 | ❌ | plugin | ✅ **v2 subgraph** (`@key/@shareable/@requires`, `_service`/`_entities`) |
 | Performance harness | — | — | — | ✅ `composer bench` (parse/build/validate/execute) |
-| Artisan commands | print/validate/generators | some | n/a | print (+`--write`)/validate/`make:graphql-*` |
+| Artisan commands | print/validate/cache/generators | some | n/a | print/validate/cache/clear + `make:graphql-*` |
+| Schema caching | ✅ (`lighthouse:cache`) | ⚠️ | n/a | ✅ AST cache (`graphql:cache`) |
 | File uploads (multipart) | ✅ | ✅ | n/a | ✅ `Upload` scalar |
 | Persisted queries (APQ) | ✅ | ⚠️ | n/a | ✅ Apollo APQ |
 | Relay pagination | ✅ | ⚠️ | manual | ✅ connection helpers |

@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Hmennen90\GraphQL;
 
+use Hmennen90\GraphQL\Console\CacheSchemaCommand;
+use Hmennen90\GraphQL\Console\ClearCacheCommand;
 use Hmennen90\GraphQL\Console\MakeDirectiveCommand;
+use Hmennen90\GraphQL\Console\MakeMutationCommand;
+use Hmennen90\GraphQL\Console\MakeQueryCommand;
+use Hmennen90\GraphQL\Console\MakeScalarCommand;
 use Hmennen90\GraphQL\Console\MakeTypeCommand;
 use Hmennen90\GraphQL\Console\PrintSchemaCommand;
 use Hmennen90\GraphQL\Console\SubscriptionServerCommand;
@@ -149,9 +154,14 @@ final class GraphQLServiceProvider extends ServiceProvider
             $this->commands([
                 PrintSchemaCommand::class,
                 ValidateSchemaCommand::class,
+                CacheSchemaCommand::class,
+                ClearCacheCommand::class,
                 SubscriptionServerCommand::class,
                 MakeTypeCommand::class,
                 MakeDirectiveCommand::class,
+                MakeScalarCommand::class,
+                MakeQueryCommand::class,
+                MakeMutationCommand::class,
             ]);
         }
     }

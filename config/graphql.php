@@ -48,6 +48,13 @@ return [
         'factory' => null,
         'sdl_path' => [],
         'resolvers' => [],
+
+        // Cache the parsed SDL (AST) so the schema is not re-parsed on every boot.
+        // Applies to SDL schemas only; write it with `php artisan graphql:cache`.
+        'cache' => [
+            'enabled' => env('GRAPHQL_SCHEMA_CACHE', false),
+            'path' => storage_path('framework/cache/graphql-schema.cache'),
+        ],
     ],
 
     /*

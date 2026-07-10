@@ -60,4 +60,30 @@ final class CommandsTest extends TestCase
         $this->assertStringContainsString('implements SchemaDirective', (string) file_get_contents($file));
         @unlink($file);
     }
+
+    /**
+     * @return list<array{0: string, 1: string, 2: string}>
+     */
+    public static function generators(): array
+    {
+        return [
+            'scalar' => ['make:graphql-scalar', 'app/GraphQL/Scalars/DateType.php', 'extends ScalarType'],
+            'query' => ['make:graphql-query', 'app/GraphQL/Queries/FetchUser.php', '__invoke'],
+            'mutation' => ['make:graphql-mutation', 'app/GraphQL/Mutations/CreateUser.php', '__invoke'],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('generators')]
+    public function test_generator_creates_expected_class(string $command, string $relative, string $needle): void
+    {
+        $file = $this->app->basePath($relative);
+        @unlink($file);
+
+        $name = pathinfo($relative, PATHINFO_FILENAME);
+        $this->artisan($command, ['name' => $name])->assertSuccessful();
+
+        $this->assertFileExists($file);
+        $this->assertStringContainsString($needle, (string) file_get_contents($file));
+        @unlink($file);
+    }
 }

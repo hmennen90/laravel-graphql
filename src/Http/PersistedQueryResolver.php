@@ -13,6 +13,8 @@ use Illuminate\Contracts\Config\Repository as Config;
  */
 final readonly class PersistedQueryResolver
 {
+    public const string TAG = 'graphql-apq';
+
     private const string PREFIX = 'graphql:pq:';
 
     public function __construct(
@@ -40,16 +42,32 @@ final readonly class PersistedQueryResolver
             if (! hash_equals($hash, hash('sha256', $query))) {
                 throw new PersistedQueryException('Provided sha256Hash does not match the query.', 'PERSISTED_QUERY_HASH_MISMATCH');
             }
-            $this->cache->forever(self::PREFIX.$hash, $query);
+            $this->repo()->forever(self::PREFIX.$hash, $query);
 
             return $query;
         }
 
-        $stored = $this->cache->get(self::PREFIX.$hash);
+        $stored = $this->repo()->get(self::PREFIX.$hash);
         if (! is_string($stored)) {
             throw new PersistedQueryException('PersistedQueryNotFound', 'PERSISTED_QUERY_NOT_FOUND');
         }
 
         return $stored;
+    }
+
+    /** Tag entries when the cache store supports it, so `graphql:clear` can flush them. */
+    private function repo(): Cache
+    {
+        $store = $this->cache;
+        if (! method_exists($store, 'tags')) {
+            return $store;
+        }
+
+        try {
+            return $store->tags([self::TAG]);
+        } catch (\Throwable) {
+            // Store is not taggable — fall back to the plain repository.
+            return $store;
+        }
     }
 }

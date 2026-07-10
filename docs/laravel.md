@@ -24,11 +24,33 @@ php artisan graphql:print                 # print the schema as SDL
 php artisan graphql:print --write         # write SDL to base_path/schema.graphql
 php artisan graphql:print --write=docs/schema.graphql
 php artisan graphql:validate              # validate the configured schema (CI guard)
+php artisan graphql:cache                 # cache the parsed SDL (AST) for faster boots
+php artisan graphql:clear                 # drop the schema cache + persisted-query (APQ) entries
 php artisan graphql:subscriptions:serve   # run the graphql-ws WebSocket server (Swoole)
 
-php artisan make:graphql-type UserType         # scaffold a code-first type
-php artisan make:graphql-directive UppercaseDirective  # scaffold a build-time directive
+php artisan make:graphql-type UserType                 # code-first object type
+php artisan make:graphql-directive UppercaseDirective  # build-time directive
+php artisan make:graphql-scalar DateType               # custom scalar
+php artisan make:graphql-query FetchUser               # single-field query resolver (@field)
+php artisan make:graphql-mutation CreateUser           # single-field mutation resolver (@field)
 ```
+
+### Schema caching
+
+For SDL schemas, cache the parsed AST so it is not re-parsed on every boot:
+
+```php
+// config/graphql.php
+'schema' => [
+    'cache' => [
+        'enabled' => env('GRAPHQL_SCHEMA_CACHE', false),   // true in production
+        'path'    => storage_path('framework/cache/graphql-schema.cache'),
+    ],
+],
+```
+
+Run `php artisan graphql:cache` on deploy and `php artisan graphql:clear` to invalidate
+it. Caching applies to SDL schemas; factory/code-first schemas build directly.
 
 `vendor:publish` exposes the config and views (and command stubs):
 

@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Hmennen90\GraphQL\Engine\Error\CoercionError;
+use Hmennen90\GraphQL\Engine\Language\AST\StringValueNode;
+use Hmennen90\GraphQL\Engine\Language\AST\ValueNode;
+use Hmennen90\GraphQL\Engine\Type\Definition\ScalarType;
+
+/** A custom scalar. Register the instance in your schema's type list. */
+final class {{ class }} extends ScalarType
+{
+    protected string $name = '{{ class }}';
+
+    protected ?string $description = 'TODO: describe this scalar.';
+
+    public function serialize(mixed $value): mixed
+    {
+        // Internal PHP value -> output representation.
+        return (string) $value;
+    }
+
+    public function parseValue(mixed $value): mixed
+    {
+        // Input (variable) value -> internal representation.
+        if (! is_string($value)) {
+            throw new CoercionError('{{ class }} expects a string value.');
+        }
+
+        return $value;
+    }
+
+    public function parseLiteral(ValueNode $node, array $variables): mixed
+    {
+        if (! $node instanceof StringValueNode) {
+            throw new CoercionError('{{ class }} expects a string literal.');
+        }
+
+        return $node->value;
+    }
+}

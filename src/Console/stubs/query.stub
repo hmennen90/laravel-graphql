@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use Hmennen90\GraphQL\Engine\Executor\ResolveInfo;
+
+/**
+ * Single-field query resolver. Wire it up in SDL with:
+ *   type Query { example: String @field(resolver: "{{ namespace }}\\{{ class }}") }
+ */
+final class {{ class }}
+{
+    /**
+     * @param  array<string, mixed>  $args
+     */
+    public function __invoke(mixed $root, array $args, mixed $context, ResolveInfo $info): mixed
+    {
+        // TODO: resolve and return the field value.
+        return null;
+    }
+}
