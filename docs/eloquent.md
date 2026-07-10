@@ -80,6 +80,26 @@ with `key:`).
 The `graphql:print` Artisan command prints the built schema as SDL
 (`Hmennen90\GraphQL\Engine\Schema\SchemaPrinter`).
 
+## Apollo Federation
+
+Turn any schema into a federated subgraph with `Federation::subgraph()`. It adds the
+`_service { sdl }` and `_entities(representations: [_Any!]!)` query fields plus the
+`_Any`, `_Service` and `_Entity` types, and wires a reference resolver per entity type:
+
+```php
+use Hmennen90\GraphQL\Federation\Federation;
+
+$subgraph = Federation::subgraph($schema, [
+    'User' => [
+        'model'   => \App\Models\User::class,
+        'resolve' => fn (array $representation) => \App\Models\User::find($representation['id']),
+    ],
+]);
+```
+
+The gateway calls `_entities` with `{ __typename, ...keyFields }` representations; each is
+routed to the matching resolver and the returned model is resolved into its object type.
+`_service.sdl` exposes the subgraph SDL via the schema printer.
+
 > Roadmap: declarative `@rules`/`@validator`, argument sanitisers
-> (`@trim`/`@hash`/`@globalId`), attribute equivalents (`#[All]`…) and full Apollo
-> Federation (entity resolution) are planned.
+> (`@trim`/`@hash`/`@globalId`) and attribute equivalents (`#[All]`…) are planned.
