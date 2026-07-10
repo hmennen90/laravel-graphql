@@ -51,4 +51,5 @@ nav:
   - Eloquent Directives: eloquent.md
   - Validation & Sanitisers: validation.md
   - Apollo Federation: federation.md
+  - Benchmarks: benchmarks.md
   - Comparison: comparison.md

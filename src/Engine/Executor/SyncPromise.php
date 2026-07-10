@@ -109,7 +109,6 @@ final class SyncPromise
     {
         $result = new self();
         $remaining = count($promises);
-        $values = [];
 
         if ($remaining === 0) {
             $result->fulfill([]);
@@ -117,13 +116,16 @@ final class SyncPromise
             return $result;
         }
 
+        // Pre-fill in index order so results come out ordered without an O(n log n)
+        // ksort once every item has settled (items may settle out of order).
+        $values = array_fill(0, $remaining, null);
+
         foreach ($promises as $index => $promise) {
             $promise->then(
                 function (mixed $value) use (&$values, &$remaining, $index, $result): void {
                     $values[$index] = $value;
                     if (--$remaining === 0) {
-                        ksort($values);
-                        $result->fulfill(array_values($values));
+                        $result->fulfill($values);
                     }
                 },
                 function (Throwable $e) use ($result): void {
@@ -167,9 +169,16 @@ final class SyncPromise
 
     public static function runQueue(): void
     {
-        while (self::$queue !== []) {
-            $callback = array_shift(self::$queue);
+        // Walk the queue with a moving index instead of array_shift(): shifting
+        // re-indexes the whole array on every call, making a drain of N microtasks
+        // O(N²). Callbacks may append more tasks (contiguous keys), which this loop
+        // picks up before resetting.
+        $index = 0;
+        while (array_key_exists($index, self::$queue)) {
+            $callback = self::$queue[$index];
+            $index++;
             $callback();
         }
+        self::$queue = [];
     }
 }

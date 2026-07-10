@@ -58,7 +58,8 @@
         "test:feature": "phpunit --testsuite=Feature",
         "analyse": "phpstan analyse",
         "rector": "rector process",
-        "rector:dry": "rector process --dry-run"
+        "rector:dry": "rector process --dry-run",
+        "bench": "@php benchmarks/run.php"
     },
     "config": {
         "sort-packages": true,

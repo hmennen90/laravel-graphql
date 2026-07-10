@@ -566,6 +566,18 @@ All companies requested during one query are fetched in a single batch call.
 ],
 ```
 
+### Benchmarks
+
+A dependency-free harness measures each phase (parse/build/validate/execute), list
+throughput and DataLoader batching:
+
+```bash
+composer bench
+```
+
+Parse, validate and small executions run in **microseconds**; a realistic page
+(10–100 objects) resolves in single-digit milliseconds. See [Benchmarks](docs/benchmarks.md).
+
 ---
 
 ## Custom directives
