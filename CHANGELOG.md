@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/hmennen90/laravel-graphql/compare/v1.2.0...v1.2.1) (2026-07-10)
+
+### Performance Improvements
+
+* **executor:** complete synchronous fields inline (hybrid sync/async) ([82dc8d6](https://github.com/hmennen90/laravel-graphql/commit/82dc8d62368ba8f3c1019e1db96f1a897a151482))
+
 ## [1.2.0](https://github.com/hmennen90/laravel-graphql/compare/v1.1.0...v1.2.0) (2026-07-10)
 
 ### Features
