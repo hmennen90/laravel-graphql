@@ -62,10 +62,18 @@ final class QueryType
     {
         return 'world';
     }
+
+    // Declare field arguments (built-in scalars) via `args`; they arrive coerced in $args.
+    #[GraphQLField(type: 'String!', args: ['name' => 'String!', 'excited' => 'Boolean'])]
+    public function greet(mixed $source, array $args): string
+    {
+        return 'Hi '.$args['name'];
+    }
 }
 
 $types = (new AttributeSchemaBuilder())->build([QueryType::class]);
 $schema = new Schema(new SchemaConfig(query: $types['Query']));
 ```
 
-Type expressions accept the full GraphQL syntax (`String!`, `[User!]!`, …).
+Type expressions accept the full GraphQL syntax (`String!`, `[User!]!`, …). Field
+arguments are declared with `args: ['name' => 'typeExpression']` (built-in scalars).

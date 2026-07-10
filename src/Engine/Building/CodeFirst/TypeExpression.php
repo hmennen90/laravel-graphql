@@ -8,6 +8,7 @@ use Closure;
 use Hmennen90\GraphQL\Engine\Language\Lexer;
 use Hmennen90\GraphQL\Engine\Language\Source;
 use Hmennen90\GraphQL\Engine\Language\TokenKind;
+use Hmennen90\GraphQL\Engine\Type\Definition\InputType;
 use Hmennen90\GraphQL\Engine\Type\Definition\OutputType;
 use Hmennen90\GraphQL\Engine\Type\Definition\Type;
 use RuntimeException;
@@ -30,6 +31,56 @@ final class TypeExpression
 
         if ($lexer->token()->kind !== TokenKind::EOF) {
             throw new RuntimeException(sprintf('Invalid type expression: "%s".', $expression));
+        }
+
+        return $type;
+    }
+
+    /**
+     * Parse an input-type expression (for argument/input-field types).
+     *
+     * @param  Closure(string): (Type&InputType)  $resolveNamed
+     */
+    public static function parseInput(string $expression, Closure $resolveNamed): Type&InputType
+    {
+        $lexer = new Lexer(new Source($expression));
+        $lexer->advance();
+
+        $type = self::parseInputReference($lexer, $resolveNamed);
+
+        if ($lexer->token()->kind !== TokenKind::EOF) {
+            throw new RuntimeException(sprintf('Invalid type expression: "%s".', $expression));
+        }
+
+        return $type;
+    }
+
+    /**
+     * @param  Closure(string): (Type&InputType)  $resolveNamed
+     */
+    private static function parseInputReference(Lexer $lexer, Closure $resolveNamed): Type&InputType
+    {
+        if ($lexer->token()->kind === TokenKind::BRACKET_L) {
+            $lexer->advance();
+            $inner = self::parseInputReference($lexer, $resolveNamed);
+            if ($lexer->token()->kind !== TokenKind::BRACKET_R) {
+                throw new RuntimeException('Expected "]" in type expression.');
+            }
+            $lexer->advance();
+            $type = Type::listOf($inner);
+        } else {
+            $token = $lexer->token();
+            if ($token->kind !== TokenKind::NAME || $token->value === null) {
+                throw new RuntimeException('Expected a type name in type expression.');
+            }
+            $lexer->advance();
+            $type = $resolveNamed($token->value);
+        }
+
+        if ($lexer->token()->kind === TokenKind::BANG) {
+            $lexer->advance();
+
+            return Type::nonNull($type);
         }
 
         return $type;

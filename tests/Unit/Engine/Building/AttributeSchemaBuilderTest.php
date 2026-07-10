@@ -27,6 +27,15 @@ final class AttributeQueryType
     {
         return ['text' => 'hi'];
     }
+
+    /**
+     * @param  array<string, mixed>  $args
+     */
+    #[GraphQLField(type: 'String!', args: ['name' => 'String!', 'excited' => 'Boolean'])]
+    public function greet(mixed $source, array $args): string
+    {
+        return 'Hi '.$args['name'].(($args['excited'] ?? false) === true ? '!' : '');
+    }
 }
 
 #[GraphQLType(name: 'Greeting')]
@@ -54,5 +63,15 @@ final class AttributeSchemaBuilderTest extends TestCase
         $this->assertSame([
             'data' => ['hello' => 'world', 'greeting' => ['text' => 'hi']],
         ], $result);
+    }
+
+    public function test_attribute_field_arguments_are_coerced_and_passed(): void
+    {
+        $types = new AttributeSchemaBuilder()->build([AttributeQueryType::class, AttributeGreetingType::class]);
+        $schema = new Schema(new SchemaConfig(query: $types['Query']));
+
+        $result = Executor::execute($schema, Parser::parse('{ greet(name: "Ada", excited: true) }'))->toArray();
+
+        $this->assertSame('Hi Ada!', $result['data']['greet']);
     }
 }

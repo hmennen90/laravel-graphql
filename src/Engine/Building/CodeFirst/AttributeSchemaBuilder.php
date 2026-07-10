@@ -10,7 +10,9 @@ use Hmennen90\GraphQL\Engine\Building\CodeFirst\Attributes\ProvidesDirective;
 use Hmennen90\GraphQL\Engine\Building\SchemaBuildContext;
 use Hmennen90\GraphQL\Engine\Building\SchemaFirst\ArgumentDirective;
 use Hmennen90\GraphQL\Engine\Building\SchemaFirst\SchemaDirective;
+use Hmennen90\GraphQL\Engine\Type\Definition\Argument;
 use Hmennen90\GraphQL\Engine\Type\Definition\FieldDefinition;
+use Hmennen90\GraphQL\Engine\Type\Definition\InputType;
 use Hmennen90\GraphQL\Engine\Type\Definition\NamedType;
 use Hmennen90\GraphQL\Engine\Type\Definition\ObjectType;
 use Hmennen90\GraphQL\Engine\Type\Definition\OutputType;
@@ -94,6 +96,11 @@ final class AttributeSchemaBuilder
             $methodName = $method->getName();
             $className = $reflection->getName();
 
+            $args = [];
+            foreach ($meta->args as $argName => $argType) {
+                $args[] = Argument::make($argName, TypeExpression::parseInput($argType, fn (string $n): Type&InputType => $this->resolveNamedInput($n)));
+            }
+
             $field = FieldDefinition::make(
                 $fieldName,
                 TypeExpression::parse($meta->type, fn (string $n): Type&OutputType => $this->resolveNamed($n)),
@@ -102,6 +109,7 @@ final class AttributeSchemaBuilder
 
                     return $instance->{$methodName}($source, $args, $context, $info);
                 },
+                args: $args,
                 description: $meta->description,
             );
 
@@ -144,6 +152,17 @@ final class AttributeSchemaBuilder
             $parentTypeName,
             $fieldName,
         );
+    }
+
+    /** Resolve an argument's named input type. Attribute-field arguments support built-in scalars. */
+    private function resolveNamedInput(string $name): Type&InputType
+    {
+        $scalars = Type::builtInScalars();
+        if (isset($scalars[$name])) {
+            return $scalars[$name];
+        }
+
+        throw new RuntimeException(sprintf('Attribute field arguments support built-in scalars; unknown input type "%s".', $name));
     }
 
     private function resolveNamed(string $name): Type&OutputType
