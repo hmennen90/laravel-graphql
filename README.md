@@ -572,11 +572,29 @@ A dependency-free harness measures each phase (parse/build/validate/execute), li
 throughput and DataLoader batching:
 
 ```bash
-composer bench
+composer bench   # php benchmarks/run.php
 ```
 
+Indicative results on an Apple Silicon laptop, PHP 8.4 (no JIT) — median over many
+iterations. Numbers are machine-specific; the *shape* (per-phase cost, scaling) is
+what matters:
+
+| Scenario | Median | Throughput |
+|---|---|---|
+| parse: small query | ~6 µs | ~165k/s |
+| parse: nested query | ~25 µs | ~40k/s |
+| build: schema from SDL | ~100 µs | ~10k/s |
+| validate: nested query | ~7 µs | ~142k/s |
+| execute: flat field | ~6 µs | ~171k/s |
+| execute: list of 100 | ~2.3 ms | ~440/s |
+| execute: list of 1000 | ~56 ms | ~18/s |
+| execute: 500 nested + DataLoader | ~28 ms | ~36/s |
+| full: parse+validate+execute (100) | ~2.4 ms | ~410/s |
+
 Parse, validate and small executions run in **microseconds**; a realistic page
-(10–100 objects) resolves in single-digit milliseconds. See [Benchmarks](docs/benchmarks.md).
+(10–100 objects) resolves in single-digit milliseconds, and the DataLoader collapses
+an N+1 relation into a single batched load. See [Benchmarks](docs/benchmarks.md) for
+methodology and scaling notes.
 
 ---
 
