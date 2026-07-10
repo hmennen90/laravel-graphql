@@ -25,7 +25,8 @@ mature than long-standing projects.
 | Learning surface | schema directive DSL | base classes | engine API | plain callables |
 | Introspection | ✅ | ✅ | ✅ | ✅ |
 | Query / mutation | ✅ | ✅ | ✅ | ✅ |
-| Subscriptions | ✅ full (Pusher/Echo) | ⚠️ limited | n/a | ✅ broadcasting + graphql-ws protocol |
+| Subscriptions — transport | broadcasting (Pusher/Echo) | broadcasting (limited) | n/a | broadcasting (Reverb/Pusher) **+ graphql-ws** |
+| Subscriptions — maturity | mature, battle-tested | basic | n/a | new |
 | Query batching | ✅ | ✅ | n/a | ✅ |
 | N+1 batching (DataLoader) | ✅ | ⚠️ | ✅ (deferred) | ✅ built-in DataLoader |
 | Depth / complexity limits | ✅ | ⚠️ | ✅ | ✅ configurable |
