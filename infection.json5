@@ -1,0 +1,21 @@
+{
+    // Mutation testing focused on the hand-written engine core — the novel,
+    // correctness-critical code (lexer, parser, validator, executor, type system).
+    // Run with a coverage driver (pcov/xdebug): `composer mutation`.
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": [
+            "src/Engine"
+        ]
+    },
+    "mutators": {
+        "@default": true
+    },
+    "logs": {
+        "text": "build/infection.log",
+        "stryker": {
+            "badge": "main"
+        }
+    },
+    "timeout": 20
+}
