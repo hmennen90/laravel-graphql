@@ -111,6 +111,16 @@ final class Schema
         return false;
     }
 
+    /**
+     * Validate that this schema is well-formed.
+     *
+     * @return array<int, \Hmennen90\GraphQL\Engine\Error\GraphQLError>
+     */
+    public function validate(): array
+    {
+        return (new SchemaValidator())->validate($this);
+    }
+
     public function getDirective(string $name): ?Directive
     {
         return $this->directives[$name] ?? null;

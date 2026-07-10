@@ -38,7 +38,20 @@ final class GraphQL
 
     public function schema(): Schema
     {
-        return $this->schema ??= $this->buildSchema();
+        if ($this->schema !== null) {
+            return $this->schema;
+        }
+
+        $schema = $this->buildSchema();
+
+        $errors = $schema->validate();
+        if ($errors !== []) {
+            $messages = implode('; ', array_map(static fn ($e): string => $e->getMessage(), $errors));
+
+            throw new RuntimeException('Invalid GraphQL schema: '.$messages);
+        }
+
+        return $this->schema = $schema;
     }
 
     /**
