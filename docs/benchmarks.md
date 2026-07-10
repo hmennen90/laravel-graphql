@@ -50,5 +50,41 @@ PHP's cycle collector walking the transient promise graph — a known trait of
 promise-based executors. It is negligible at realistic page sizes; if you page results
 (which `@paginate` encourages) you never hit it.
 
+## Versus webonyx/graphql-php
+
+`webonyx/graphql-php` is the engine behind both Lighthouse and rebing/graphql-laravel,
+so an engine-to-engine comparison is the fair way to read "vs Lighthouse" — it isolates
+the executor from the Laravel HTTP, directive and Eloquent layers a full Lighthouse
+request adds. Run it with:
+
+```bash
+composer require --dev webonyx/graphql-php
+php benchmarks/vs-webonyx.php   # or: composer bench:vs
+```
+
+Indicative results (Apple Silicon, PHP 8.4, identical SDL + in-memory data):
+
+| Scenario | this package | webonyx | verdict |
+|---|---|---|---|
+| parse: list query | ~20 µs | ~32 µs | **1.6× faster** |
+| validate: list query | ~6 µs | ~207 µs | **~35× faster** |
+| execute: flat field | ~6 µs | ~93 µs | **~16× faster** |
+| execute: list of 100 | ~2.2 ms | ~1.4 ms | 1.6× slower |
+| execute: list of 1000 | ~56 ms | ~12 ms | 4.8× slower |
+
+**Honest reading:**
+
+- This engine has **far lower fixed overhead** — parsing, validation and small
+  executions are many times faster. For the typical request (a handful of fields, a
+  small page of results) it wins comfortably.
+- webonyx **scales better on large flat lists**. Our executor allocates a promise per
+  field to support DataLoader batching; at thousands of objects the allocation + cycle
+  collection cost dominates and webonyx's mostly-synchronous execution pulls ahead.
+- Because `@paginate` keeps result sets small, real APIs mostly live in the regime
+  where this engine is faster. Very large un-paginated lists are where webonyx leads —
+  and reducing our per-field allocation is a tracked optimisation.
+- Caveat: validation cost depends on rule coverage; webonyx runs a larger standard rule
+  set, so part of that gap reflects breadth, not just speed.
+
 > Benchmarks are a regression guard, not a marketing number. If you change the
 > executor or promise machinery, run `composer bench` before and after.

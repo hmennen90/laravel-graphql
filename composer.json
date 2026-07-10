@@ -59,7 +59,8 @@
         "analyse": "phpstan analyse",
         "rector": "rector process",
         "rector:dry": "rector process --dry-run",
-        "bench": "@php benchmarks/run.php"
+        "bench": "@php benchmarks/run.php",
+        "bench:vs": "@php benchmarks/vs-webonyx.php"
     },
     "config": {
         "sort-packages": true,

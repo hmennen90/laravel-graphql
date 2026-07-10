@@ -74,6 +74,10 @@ mature than long-standing projects.
   attribute-driven schemas that compile to the same internal schema — and every
   Eloquent directive has a `#[All]`/`#[Paginate]` attribute equivalent that runs the
   same implementation.
+- **Performance.** Against `webonyx/graphql-php` (Lighthouse's engine), this engine has
+  much lower fixed overhead — parsing, validation and small executions are many times
+  faster — while webonyx scales better on very large un-paginated lists. See
+  [Benchmarks](benchmarks.md#versus-webonyxgraphql-php).
 - **Trade-off.** The directive catalogues are now comparable — read, relations,
   filter/sort, nested mutations, Scout, validation/sanitiser directives and Apollo
   Federation are all covered here. Lighthouse still leads on maturity, subscription
