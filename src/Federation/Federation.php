@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hmennen90\GraphQL\Federation;
 
 use Hmennen90\GraphQL\Engine\Schema\Schema;
+use Hmennen90\GraphQL\Engine\Schema\SchemaAnnotations;
 use Hmennen90\GraphQL\Engine\Schema\SchemaConfig;
 use Hmennen90\GraphQL\Engine\Schema\SchemaPrinter;
 use Hmennen90\GraphQL\Engine\Type\Definition\Argument;
@@ -25,8 +26,11 @@ final class Federation
 {
     /**
      * @param  array<string, array{model: class-string, resolve: callable(array<string, mixed>): mixed, keys?: string|list<string>, key?: string|list<string>, shareable?: list<string>, external?: list<string>, requires?: array<string, string>, provides?: array<string, string>}>  $entities
+     * @param  SchemaAnnotations|null  $annotations  federation directives for `_service.sdl`; defaults to
+     *                                               deriving them from the entity config. Pass
+     *                                               {@see FederationAnnotations::fromSdl()} to read `@key` etc. from the SDL.
      */
-    public static function subgraph(Schema $base, array $entities): Schema
+    public static function subgraph(Schema $base, array $entities, ?SchemaAnnotations $annotations = null): Schema
     {
         $query = $base->getQueryType();
         if ($query === null) {
@@ -64,7 +68,7 @@ final class Federation
             FieldDefinition::make('sdl', Type::nonNull(Type::string())),
         ]);
 
-        $sdl = SchemaPrinter::print($base, FederationAnnotations::fromConfig($entities));
+        $sdl = SchemaPrinter::print($base, $annotations ?? FederationAnnotations::fromConfig($entities));
 
         $fields = array_values($query->fields());
         $fields[] = FieldDefinition::make('_service', Type::nonNull($service), static fn (): array => ['sdl' => $sdl]);

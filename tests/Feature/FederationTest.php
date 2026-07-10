@@ -93,6 +93,23 @@ final class FederationTest extends TestCase
         $this->assertSame([null, null, null], $result['data']['_entities']);
     }
 
+    public function test_keys_are_derived_from_sdl_directives(): void
+    {
+        $sdl = 'type Query { ping: String } type User @key(fields: "id") @key(fields: "email") { id: ID! email: String legacy: ID @external }';
+        $base = SchemaBuilder::fromSdl($sdl);
+
+        $subgraph = Federation::subgraph(
+            $base,
+            ['User' => ['model' => FedUser::class, 'resolve' => static fn (array $r): ?FedUser => null]],
+            \Hmennen90\GraphQL\Federation\FederationAnnotations::fromSdl($sdl),
+        );
+
+        $rendered = Executor::execute($subgraph, Parser::parse('{ _service { sdl } }'))->toArray()['data']['_service']['sdl'];
+
+        $this->assertStringContainsString('@key(fields: "id") @key(fields: "email")', $rendered);
+        $this->assertStringContainsString('legacy: ID @external', $rendered);
+    }
+
     public function test_service_sdl_renders_all_federation_directives(): void
     {
         $base = SchemaBuilder::fromSdl('type Query { ping: String } type User { id: ID! email: String legacy: ID }');

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Hmennen90\GraphQL\Federation;
 
+use Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode;
+use Hmennen90\GraphQL\Engine\Language\AST\ObjectTypeDefinitionNode;
+use Hmennen90\GraphQL\Engine\Language\AST\StringValueNode;
+use Hmennen90\GraphQL\Engine\Language\Parser;
 use Hmennen90\GraphQL\Engine\Schema\SchemaAnnotations;
 
 /**
@@ -48,6 +52,54 @@ final readonly class FederationAnnotations implements SchemaAnnotations
         }
 
         return new self($keys, $shareable, $external, $requires, $provides);
+    }
+
+    /**
+     * Derive the annotations from the federation directives written in the SDL itself
+     * (`type User @key(fields: "id")`, field `@shareable`/`@external`/`@requires`/
+     * `@provides`) — so keys need not be duplicated in config.
+     */
+    public static function fromSdl(string $sdl): self
+    {
+        $keys = $shareable = $external = $requires = $provides = [];
+
+        foreach (Parser::parse($sdl)->definitions as $definition) {
+            if (! $definition instanceof ObjectTypeDefinitionNode) {
+                continue;
+            }
+            $type = $definition->name;
+
+            foreach ($definition->directives as $directive) {
+                if ($directive->name === 'key' && ($fields = self::directiveArg($directive, 'fields')) !== null) {
+                    $keys[$type][] = $fields;
+                }
+            }
+
+            foreach ($definition->fields as $field) {
+                foreach ($field->directives as $directive) {
+                    match ($directive->name) {
+                        'shareable' => $shareable[$type][] = $field->name,
+                        'external' => $external[$type][] = $field->name,
+                        'requires' => $requires[$type][$field->name] = self::directiveArg($directive, 'fields') ?? '',
+                        'provides' => $provides[$type][$field->name] = self::directiveArg($directive, 'fields') ?? '',
+                        default => null,
+                    };
+                }
+            }
+        }
+
+        return new self($keys, $shareable, $external, $requires, $provides);
+    }
+
+    private static function directiveArg(DirectiveNode $node, string $name): ?string
+    {
+        foreach ($node->arguments as $argument) {
+            if ($argument->name === $name && $argument->value instanceof StringValueNode) {
+                return $argument->value->value;
+            }
+        }
+
+        return null;
     }
 
     #[\Override]
