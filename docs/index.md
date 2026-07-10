@@ -25,6 +25,6 @@ dependency on `webonyx/graphql-php`.
 | Types | Object, Interface, Union, Enum, Input, List, Non-Null |
 | Directives | `@skip`, `@include`, `@deprecated` |
 | Introspection | `__schema`, `__type`, `__typename` |
-| Operations | Query, Mutation, Subscription (engine seam) |
+| Operations | Query, Mutation, Subscription (via broadcasting) |
 
 Continue with [Getting Started](getting-started.md).

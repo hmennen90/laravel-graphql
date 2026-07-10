@@ -71,17 +71,23 @@ $schema = SchemaBuilder::fromSdl($sdl, resolvers: [
 
 ## How it compares
 
+**Key differentiator:** unlike SDL-first stacks (e.g. Lighthouse), you do **not**
+implement a type twice. No SDL type mirroring your Eloquent model plus extra
+type/transformer classes — declare a type **once** (SDL *or* code-first *or*
+attributes); resolvers read your models directly. No directive DSL to keep in sync.
+
 | | Lighthouse | rebing/graphql-laravel | webonyx/graphql-php | **this package** |
 |---|---|---|---|---|
 | Approach | SDL-first | code-first | engine only | **SDL + code-first + attributes** |
+| Single source of truth | ❌ SDL + model | ⚠️ class per type | n/a | ✅ define once |
 | Engine | webonyx | webonyx | is the engine | **own, hand-written** |
 | Laravel | ✅ | ✅ | ❌ | ✅ |
-| Subscriptions | ✅ full | ⚠️ limited | n/a | ⚠️ seam (v1) |
+| Subscriptions | ✅ full | ⚠️ limited | n/a | ✅ broadcasting |
 | Min PHP | 8.1+ | 8.0+ | 7.4/8+ | **8.4+** |
 | Static analysis | — | — | partial | **PHPStan level 10** |
 | Maturity | mature | mature | mature | **new** |
 
-Full breakdown and guidance on when to choose what:
+Full per-package breakdown of every difference:
 [comparison](https://hmennen90.github.io/laravel-graphql/comparison/).
 
 ## Documentation

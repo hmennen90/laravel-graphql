@@ -39,6 +39,26 @@ Argument validation integrates with Laravel's validator; failures surface under
 
 ## Subscriptions
 
-The engine produces an event source for subscription operations; the Laravel layer
-bridges it to broadcasting (Reverb/Pusher). Full WebSocket transport is a later
-milestone.
+Subscriptions use Laravel broadcasting. Enable them in config:
+
+```php
+'subscriptions' => ['enabled' => true, 'broadcaster' => 'reverb'],
+```
+
+When a client sends a `subscription` operation, the endpoint registers a subscriber
+and returns the channel to listen on:
+
+```json
+{ "data": null, "extensions": { "subscription": { "channel": "graphql.<id>" } } }
+```
+
+The client subscribes to that channel via Laravel Echo. When your application has
+new data, broadcast it — the stored operation is re-executed against the payload and
+pushed to every subscriber on that topic:
+
+```php
+app(\Hmennen90\GraphQL\Subscriptions\SubscriptionManager::class)
+    ->broadcast('postAdded', $post);
+```
+
+The topic defaults to the subscription's root field name.
