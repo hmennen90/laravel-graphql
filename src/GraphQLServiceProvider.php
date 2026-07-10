@@ -94,6 +94,12 @@ final class GraphQLServiceProvider extends ServiceProvider
                 is_int($default) ? $default : 15,
                 is_int($max) ? $max : 100,
             ));
+
+            $relation = new \Hmennen90\GraphQL\Directives\Eloquent\RelationDirective();
+            foreach (['hasMany', 'hasOne', 'belongsTo', 'belongsToMany', 'morphMany', 'morphOne', 'morphTo'] as $relationName) {
+                $registry->register($relationName, $relation);
+            }
+            $registry->register('count', new \Hmennen90\GraphQL\Directives\Eloquent\CountDirective());
             $registry->register('can', new \Hmennen90\GraphQL\Directives\CanDirective());
             $registry->register('cacheControl', new \Hmennen90\GraphQL\Directives\CacheControlDirective());
 
