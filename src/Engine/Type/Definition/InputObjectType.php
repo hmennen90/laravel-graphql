@@ -23,8 +23,14 @@ final class InputObjectType extends Type implements NamedType, InputType
         private readonly string $name,
         Closure|array $fields,
         private readonly ?string $description = null,
+        private readonly bool $isOneOf = false,
     ) {
         $this->fieldsConfig = $fields;
+    }
+
+    public function isOneOf(): bool
+    {
+        return $this->isOneOf;
     }
 
     public function name(): string

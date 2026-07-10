@@ -164,7 +164,11 @@ final class AstToSchema
             $definition instanceof UnionTypeDefinitionNode => $this->createUnionType($definition),
             $definition instanceof EnumTypeDefinitionNode => $this->createEnumType($definition),
             $definition instanceof InputObjectTypeDefinitionNode => $this->createInputObjectType($definition),
-            $definition instanceof ScalarTypeDefinitionNode => new CustomScalarType($definition->name, description: $definition->description),
+            $definition instanceof ScalarTypeDefinitionNode => new CustomScalarType(
+                $definition->name,
+                description: $definition->description,
+                specifiedByUrl: $this->directiveArg($definition->directives, 'specifiedBy', 'url'),
+            ),
         };
     }
 
@@ -237,7 +241,41 @@ final class AstToSchema
                 return $fields;
             },
             $node->description,
+            $this->hasDirective($node->directives, 'oneOf'),
         );
+    }
+
+    /**
+     * @param  array<int, \Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode>  $directives
+     */
+    private function hasDirective(array $directives, string $name): bool
+    {
+        foreach ($directives as $directive) {
+            if ($directive->name === $name) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<int, \Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode>  $directives
+     */
+    private function directiveArg(array $directives, string $directiveName, string $argName): ?string
+    {
+        foreach ($directives as $directive) {
+            if ($directive->name !== $directiveName) {
+                continue;
+            }
+            foreach ($directive->arguments as $argument) {
+                if ($argument->name === $argName && $argument->value instanceof StringValueNode) {
+                    return $argument->value->value;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

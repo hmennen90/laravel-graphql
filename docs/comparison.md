@@ -29,6 +29,10 @@ mature than long-standing projects.
 | Query batching | ✅ | ✅ | n/a | ✅ |
 | GraphiQL | ✅ (plugin) | ✅ | n/a | ✅ bundled |
 | Validation rules | comprehensive | via webonyx | comprehensive | comprehensive spec set |
+| Custom directives | ✅ many | ⚠️ some | via engine | ✅ runtime + SDL build-time |
+| SDL type extensions (`extend`) | ✅ | n/a | ✅ | ✅ object/interface/input |
+| Schema self-validation | ✅ | ✅ | ✅ | ✅ |
+| `@oneOf` / `@specifiedBy` | ⚠️ partial | — | ✅ | ✅ |
 | Field authorization | `@can` directive | method-based | manual | Gate via resolver context |
 | Argument validation | `@rules` directive | Laravel rules | manual | Laravel validator in resolver |
 | Minimum PHP | 8.1+ | 8.0+ | 7.4 / 8+ | **8.4+** |

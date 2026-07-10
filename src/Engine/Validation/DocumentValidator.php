@@ -378,6 +378,10 @@ final class DocumentValidator
                 ), $blame);
             }
         }
+
+        if ($type->isOneOf() && count($present) !== 1) {
+            $this->error(sprintf('OneOf input object "%s" must specify exactly one field.', $type->name()), $node);
+        }
     }
 
     /**

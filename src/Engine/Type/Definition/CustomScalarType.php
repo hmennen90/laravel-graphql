@@ -29,12 +29,18 @@ final class CustomScalarType extends ScalarType
         ?callable $parseValue = null,
         ?callable $parseLiteral = null,
         ?string $description = null,
+        private readonly ?string $specifiedByUrl = null,
     ) {
         $this->name = $name;
         $this->description = $description;
         $this->serializeFn = $serialize !== null ? Closure::fromCallable($serialize) : null;
         $this->parseValueFn = $parseValue !== null ? Closure::fromCallable($parseValue) : null;
         $this->parseLiteralFn = $parseLiteral !== null ? Closure::fromCallable($parseLiteral) : null;
+    }
+
+    public function specifiedByUrl(): ?string
+    {
+        return $this->specifiedByUrl;
     }
 
     public function serialize(mixed $value): mixed
