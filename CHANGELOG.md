@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/hmennen90/laravel-graphql/compare/v1.0.0...v1.1.0) (2026-07-10)
+
+### Features
+
+* Laravel 13 support ([d8d7fe2](https://github.com/hmennen90/laravel-graphql/commit/d8d7fe2ebfcb20c4b9919ec9b20b85887d21808a))
+
 ## 1.0.0 (2026-07-10)
 
 ### Features
