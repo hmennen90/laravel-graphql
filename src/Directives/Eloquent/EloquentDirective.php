@@ -32,6 +32,20 @@ abstract readonly class EloquentDirective implements SchemaDirective
         );
     }
 
+    /**
+     * @param  array<array-key, mixed>  $args
+     * @return array<string, mixed>
+     */
+    protected static function stringKeys(array $args): array
+    {
+        $out = [];
+        foreach ($args as $key => $value) {
+            $out[(string) $key] = $value;
+        }
+
+        return $out;
+    }
+
     protected function stringArg(DirectiveNode $node, string $name): ?string
     {
         foreach ($node->arguments as $argument) {
