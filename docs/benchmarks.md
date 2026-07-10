@@ -86,5 +86,32 @@ Indicative results (Apple Silicon, PHP 8.4, identical SDL + in-memory data):
 - Caveat: validation cost depends on rule coverage; webonyx runs a larger standard rule
   set, so part of that gap reflects breadth, not just speed.
 
+## Versus Lighthouse (end-to-end)
+
+The engine numbers above isolate the executor. This measures the **full stack** —
+Laravel + the `@all` directive + Eloquent over the same sqlite table — through each
+package's GraphQL execution service (everything an HTTP request does bar the identical
+kernel/routing overhead):
+
+```bash
+composer require --dev nuwave/lighthouse
+./vendor/bin/phpunit tests/Benchmark/LighthouseEndToEndBench.php
+```
+
+`{ users { id name email } }`, 200 rows, sqlite (Apple Silicon, PHP 8.4):
+
+| | median | ratio |
+|---|---|---|
+| laravel-graphql | ~6.1 ms | 1.2× slower |
+| nuwave/lighthouse | ~5.0 ms | — |
+
+**Honest reading:** end-to-end the two are within ~20% for a realistic query — far
+closer than the raw-engine list benchmark, because the shared Eloquent/DB cost
+dominates and compresses the engine difference. Lighthouse is a little faster here
+(its executor scales better on the 200-item list, as the webonyx comparison shows);
+for smaller results or heavier per-request overhead (parse/validate) this package
+pulls ahead. Both resolve the identical query from the identical model — the
+difference is engine, not features.
+
 > Benchmarks are a regression guard, not a marketing number. If you change the
 > executor or promise machinery, run `composer bench` before and after.
