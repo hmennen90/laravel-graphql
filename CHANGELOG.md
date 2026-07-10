@@ -1,3 +1,12 @@
+## [1.5.0](https://github.com/hmennen90/laravel-graphql/compare/v1.4.0...v1.5.0) (2026-07-10)
+
+### Features
+
+* **code-first:** argument support for attribute fields ([f3df8b7](https://github.com/hmennen90/laravel-graphql/commit/f3df8b74004d73e078c785dce13e640318edc759))
+* **federation:** derive @key/@shareable/@external/@requires/[@provides](https://github.com/provides) from SDL ([a9e3212](https://github.com/hmennen90/laravel-graphql/commit/a9e32121f666c26d480999467f3433fa294e30b0))
+* **security:** disable-introspection + persisted-queries-only modes ([acada35](https://github.com/hmennen90/laravel-graphql/commit/acada35a88926da9784b01a047bef9a6d55a5680))
+* **subscriptions:** ship RedisEventStream for SSE live streaming ([0e74e2a](https://github.com/hmennen90/laravel-graphql/commit/0e74e2aef966ab41d1a319d76f6bd5af55fa9fb7))
+
 ## [1.4.0](https://github.com/hmennen90/laravel-graphql/compare/v1.3.0...v1.4.0) (2026-07-10)
 
 ### Features
