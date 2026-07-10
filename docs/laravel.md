@@ -62,3 +62,28 @@ app(\Hmennen90\GraphQL\Subscriptions\SubscriptionManager::class)
 ```
 
 The topic defaults to the subscription's root field name.
+
+### graphql-ws (WebSocket) transport
+
+The package ships a spec-compliant [`graphql-ws`](https://github.com/enisdenjo/graphql-ws)
+protocol handler (`connection_init`/`ack`, `subscribe`/`next`/`complete`, `ping`/`pong`),
+`Hmennen90\GraphQL\Subscriptions\GraphqlWs\ProtocolHandler`. It is transport-agnostic —
+drive it from any WebSocket server via the small `Connection` interface.
+
+Because `cboden/ratchet` is incompatible with Laravel 12's Symfony 7, no WebSocket
+server is bundled (keeping the package dependency-light). Wire the handler to a server
+you control — for example OpenSwoole:
+
+```php
+$handler = new ProtocolHandler(app(GraphQL::class), app(ResponseBuilder::class));
+
+$server = new Swoole\WebSocket\Server('0.0.0.0', 9501);
+$server->on('message', function ($server, $frame) use ($handler) {
+    $handler->onMessage(new SwooleConnection($server, $frame->fd), json_decode($frame->data, true));
+});
+// Redis pub/sub bridge: app calls broadcast -> WS server calls $handler->publish($topic, $event)
+$server->start();
+```
+
+`SwooleConnection` is a thin adapter implementing `Connection` (`send`/`close`/`id`).
+The event fan-out uses Redis pub/sub so multiple server processes stay in sync.
