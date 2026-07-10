@@ -6,6 +6,7 @@ namespace Hmennen90\GraphQL;
 
 use Closure;
 use Hmennen90\GraphQL\Contracts\ProvidesSchema;
+use Hmennen90\GraphQL\Directives\DirectiveRegistry;
 use Hmennen90\GraphQL\Engine\Building\SchemaFirst\SchemaBuilder;
 use Hmennen90\GraphQL\Engine\Error\SyntaxError;
 use Hmennen90\GraphQL\Engine\Executor\ExecutionResult;
@@ -160,7 +161,9 @@ final class GraphQL
             /** @var array<string, array<string, callable>> $resolvers */
             $resolvers = is_array($schemaConfig['resolvers'] ?? null) ? $schemaConfig['resolvers'] : [];
 
-            return SchemaBuilder::fromSdl($sdl, $resolvers);
+            $registry = $this->container->make(DirectiveRegistry::class);
+
+            return SchemaBuilder::fromSdl($sdl, $resolvers, schemaDirectives: $registry->all());
         }
 
         throw new RuntimeException('No GraphQL schema is configured. Set graphql.schema.factory or graphql.schema.sdl_path.');

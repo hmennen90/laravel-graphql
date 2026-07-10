@@ -71,6 +71,26 @@ final class GraphQLServiceProvider extends ServiceProvider
 
         $this->app->singleton(SubscriptionManager::class);
 
+        $this->app->singleton(\Hmennen90\GraphQL\Eloquent\ModelResolver::class, static function (Application $app): \Hmennen90\GraphQL\Eloquent\ModelResolver {
+            $config = $app->make(Repository::class);
+            $namespace = $config->get('graphql.models.namespace', 'App\\Models');
+
+            return new \Hmennen90\GraphQL\Eloquent\ModelResolver(is_string($namespace) ? $namespace : 'App\\Models');
+        });
+
+        $this->app->singleton(\Hmennen90\GraphQL\Directives\DirectiveRegistry::class, static function (Application $app): \Hmennen90\GraphQL\Directives\DirectiveRegistry {
+            $registry = new \Hmennen90\GraphQL\Directives\DirectiveRegistry();
+            $models = $app->make(\Hmennen90\GraphQL\Eloquent\ModelResolver::class);
+
+            $registry->register('all', new \Hmennen90\GraphQL\Directives\Eloquent\AllDirective($models));
+            $registry->register('find', new \Hmennen90\GraphQL\Directives\Eloquent\FindDirective($models));
+            $registry->register('first', new \Hmennen90\GraphQL\Directives\Eloquent\FirstDirective($models));
+            $registry->register('can', new \Hmennen90\GraphQL\Directives\CanDirective());
+            $registry->register('cacheControl', new \Hmennen90\GraphQL\Directives\CacheControlDirective());
+
+            return $registry;
+        });
+
         if (extension_loaded('swoole') || extension_loaded('openswoole')) {
             $this->app->bind(SubscriptionServer::class, \Hmennen90\GraphQL\Subscriptions\Swoole\SwooleSubscriptionServer::class);
         }
