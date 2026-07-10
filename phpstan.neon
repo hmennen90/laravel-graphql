@@ -8,4 +8,6 @@ parameters:
     excludePaths:
         # Requires the Swoole/OpenSwoole extension (environment-specific, not in CI).
         - src/Subscriptions/Swoole/*
+        # Consumer-facing test helper; used in downstream test suites, not internally.
+        - src/Testing/MakesGraphQLRequests.php
     tmpDir: build/phpstan
