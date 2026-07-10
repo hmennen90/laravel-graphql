@@ -117,7 +117,7 @@ final class GraphQL
     }
 
     /**
-     * @return array<string, int>
+     * @return array<string, int|bool>
      */
     private function validationOptions(): array
     {
@@ -128,6 +128,9 @@ final class GraphQL
         }
         if (isset($security['max_complexity']) && is_int($security['max_complexity'])) {
             $options['maxComplexity'] = $security['max_complexity'];
+        }
+        if (($security['disable_introspection'] ?? false) === true) {
+            $options['disableIntrospection'] = true;
         }
 
         return $options;

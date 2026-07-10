@@ -28,6 +28,12 @@ final readonly class PersistedQueryResolver
      */
     public function resolve(string $query, array $extensions): string
     {
+        // Strict mode: clients may only invoke pre-registered queries by hash — reject
+        // any inbound raw query (including APQ registration).
+        if ($this->config->get('graphql.persisted_queries.only') === true && $query !== '') {
+            throw new PersistedQueryException('Arbitrary queries are not allowed; provide a persisted query hash.', 'PERSISTED_QUERY_REQUIRED');
+        }
+
         $persisted = $extensions['persistedQuery'] ?? null;
         if (! is_array($persisted) || $this->config->get('graphql.persisted_queries.enabled') !== true) {
             return $query;

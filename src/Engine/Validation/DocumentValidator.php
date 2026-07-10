@@ -61,7 +61,7 @@ final class DocumentValidator
     /** @var array<int, array{type: Type, name: string, node: Node}> */
     private array $variableUsages = [];
 
-    /** @var array<string, int> */
+    /** @var array<string, int|bool> */
     private array $options = [];
 
     private function __construct(private readonly Schema $schema, private readonly DocumentNode $document)
@@ -74,7 +74,7 @@ final class DocumentValidator
     }
 
     /**
-     * @param  array<string, int>  $options  Optional limits: maxDepth, maxComplexity.
+     * @param  array<string, int|bool>  $options  Optional limits: maxDepth, maxComplexity, disableIntrospection.
      * @return array<int, GraphQLError>
      */
     public static function validate(Schema $schema, DocumentNode $document, array $options = []): array
@@ -269,6 +269,10 @@ final class DocumentValidator
         // Introspection root fields are handled by the executor.
         if (($field->name === '__schema' || $field->name === '__type')
             && $parentType === $this->schema->getQueryType()) {
+            if (($this->options['disableIntrospection'] ?? false) === true) {
+                $this->error(sprintf('Introspection field "%s" is disabled.', $field->name), $field);
+            }
+
             return;
         }
 

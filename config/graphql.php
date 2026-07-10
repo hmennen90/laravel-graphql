@@ -89,6 +89,8 @@ return [
     'security' => [
         'max_depth' => (int) env('GRAPHQL_MAX_DEPTH', 0),
         'max_complexity' => (int) env('GRAPHQL_MAX_COMPLEXITY', 0),
+        // Reject `__schema`/`__type` introspection queries (recommended in production).
+        'disable_introspection' => env('GRAPHQL_DISABLE_INTROSPECTION', false),
     ],
 
     /*
@@ -98,6 +100,9 @@ return [
     */
     'persisted_queries' => [
         'enabled' => env('GRAPHQL_PERSISTED_QUERIES', false),
+        // Strict mode: only pre-registered queries (by hash) are accepted; arbitrary
+        // queries are rejected. Register the map out-of-band before enabling.
+        'only' => env('GRAPHQL_PERSISTED_QUERIES_ONLY', false),
     ],
 
     /*
