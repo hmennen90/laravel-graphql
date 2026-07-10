@@ -35,9 +35,10 @@ callables that read your models directly.
 - **DataLoader** (N+1 batching), query **depth/complexity limits**.
 - Laravel: HTTP endpoint, batching, middleware/auth, error masking, GraphiQL,
   file uploads, Automatic Persisted Queries, `@cacheControl` HTTP caching,
-  Relay pagination, subscriptions (broadcasting **+** graphql-ws), **Apollo Federation**.
+  Relay pagination, subscriptions (broadcasting, graphql-ws **+** SSE), **Apollo Federation**.
 - PHP 8.4, PHPStan level 10, tested with `orchestra/testbench` + a GraphQL **spec
-  conformance suite** (language, validation rules, execution, introspection).
+  conformance suite** (language, validation, execution, introspection), parser **fuzzing**
+  and **Infection** mutation testing (engine core: 100% mutation coverage, ~79% MSI).
 
 ## Requirements
 

@@ -15,8 +15,9 @@ dependency on `webonyx/graphql-php`.
   or **schema-first** in SDL. Both compile to a single internal schema.
 - **Laravel-native** — HTTP endpoint, batching, middleware/auth, argument
   validation, error masking, Artisan commands, GraphiQL and a subscription seam.
-- **Strict quality** — PHP 8.4, PHPStan level 10, `orchestra/testbench`, and a
-  [GraphQL spec conformance suite](conformance.md).
+- **Strict quality** — PHP 8.4, PHPStan level 10, `orchestra/testbench`, a
+  [GraphQL spec conformance suite](conformance.md), parser fuzzing and Infection
+  mutation testing (engine core: 100% mutation coverage, ~79% MSI).
 
 ## Feature overview
 

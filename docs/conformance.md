@@ -29,6 +29,33 @@ The validator otherwise passed every rule tested, including the notoriously tric
 overlapping-field-merge rule, fragment-cycle detection and variable-position
 compatibility.
 
+## Fuzz & property testing
+
+Beyond example-based cases, the lexer/parser is fuzzed (`ParserFuzzTest`, ~4 000
+assertions): for **any** input `Parser::parse()` returns a `DocumentNode` or throws a
+`SyntaxError` — never any other `Throwable` (robustness) — and structurally well-formed
+generated documents always parse (soundness). The promise/deferred machinery has stress
+tests (`SyncPromiseStressTest`): `all()` preserves order under out-of-order settlement, a
+10 000-deep `then`-chain completes (O(N²) regression guard), and a DataLoader coalesces
+1 000 loads into a single 50-key batch.
+
+## Mutation testing
+
+[Infection](https://infection.github.io) runs against the hand-written engine core
+(`src/Engine`) in CI (pcov coverage):
+
+```bash
+composer mutation
+```
+
+Baseline: **100% mutation code coverage** and **~79% covered MSI** — every engine line is
+exercised by a test, and ~79% of mutations are actively caught. CI gates at 75% covered
+MSI (`infection.json5`). Surviving mutants concentrate in build-time glue
+(`AstToSchema`, `AttributeSchemaBuilder`), not the runtime-critical lexer/parser/
+validator/executor, and a share are equivalent mutants (e.g. an eager resolution the
+schema traversal repeats anyway) — deliberately not chased, since killing equivalents
+means brittle, implementation-coupled tests.
+
 ## Honest scope
 
 This proves conformance for the exercised cases; it is not a byte-for-byte port of the

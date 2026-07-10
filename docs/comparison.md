@@ -26,7 +26,7 @@ mature than long-standing projects.
 | Learning surface | schema directive DSL | base classes | engine API | plain callables |
 | Introspection | ✅ | ✅ | ✅ | ✅ |
 | Query / mutation | ✅ | ✅ | ✅ | ✅ |
-| Subscriptions — transport | broadcasting (Pusher/Echo) | broadcasting (limited) | n/a | broadcasting (Reverb/Pusher) **+ graphql-ws** |
+| Subscriptions — transport | broadcasting (Pusher/Echo) | broadcasting (limited) | n/a | broadcasting (Reverb/Pusher) **+ graphql-ws + SSE** |
 | Subscriptions — maturity | mature, battle-tested | basic | n/a | new |
 | Query batching | ✅ | ✅ | n/a | ✅ |
 | N+1 batching (DataLoader) | ✅ | ⚠️ | ✅ (deferred) | ✅ built-in DataLoader |
@@ -57,6 +57,7 @@ mature than long-standing projects.
 | HTTP caching | `@cacheControl` | ⚠️ | manual | ✅ `@cacheControl` + Cache-Control |
 | Minimum PHP | 8.1+ | 8.0+ | 7.4 / 8+ | **8.4+** |
 | Static analysis | — | — | partial | **PHPStan level 10** |
+| Correctness verification | — | — | reference test suite | spec conformance + fuzz + **Infection** (100% mut. coverage, ~79% MSI) |
 | Maturity | mature, large community | mature | mature (de-facto engine) | **new (1.0), small community** |
 
 ## Every difference, by package
