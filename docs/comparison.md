@@ -35,8 +35,11 @@ mature than long-standing projects.
 | SDL type extensions (`extend`) | ✅ | n/a | ✅ | ✅ object/interface/input |
 | Schema self-validation | ✅ | ✅ | ✅ | ✅ |
 | `@oneOf` / `@specifiedBy` | ⚠️ partial | — | ✅ | ✅ |
-| Field authorization | `@can` directive | method-based | manual | Gate via resolver context |
+| Field authorization | `@can` directive | method-based | manual | Gate via context **and** `@can` directive |
 | Argument validation | `@rules` directive | Laravel rules | manual | Laravel validator in resolver |
+| File uploads (multipart) | ✅ | ✅ | n/a | ✅ `Upload` scalar |
+| Persisted queries (APQ) | ✅ | ⚠️ | n/a | ✅ Apollo APQ |
+| Relay pagination | ✅ | ⚠️ | manual | ✅ connection helpers |
 | Minimum PHP | 8.1+ | 8.0+ | 7.4 / 8+ | **8.4+** |
 | Static analysis | — | — | partial | **PHPStan level 10** |
 | Maturity | mature, large community | mature | mature (de-facto engine) | **new / experimental** |

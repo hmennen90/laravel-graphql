@@ -12,6 +12,8 @@ use Hmennen90\GraphQL\Engine\Type\Definition\FieldDefinition;
 use Hmennen90\GraphQL\Engine\Type\Definition\ObjectType;
 use Hmennen90\GraphQL\Engine\Type\Definition\Type;
 use Hmennen90\GraphQL\Execution\Context;
+use Hmennen90\GraphQL\Support\UploadType;
+use Illuminate\Http\UploadedFile;
 use RuntimeException;
 
 final class TestSchema implements ProvidesSchema
@@ -50,6 +52,17 @@ final class TestSchema implements ProvidesSchema
             FieldDefinition::make('postAdded', $post, resolve: fn (mixed $root): mixed => $root),
         ]);
 
-        return new Schema(new SchemaConfig(query: $query, subscription: $subscription));
+        $upload = UploadType::make();
+        $mutation = new ObjectType('Mutation', [
+            FieldDefinition::make('upload', Type::string(),
+                args: [Argument::make('file', Type::nonNull($upload))],
+                resolve: function ($root, array $args): ?string {
+                    $file = $args['file'] ?? null;
+
+                    return $file instanceof UploadedFile ? $file->getClientOriginalName() : null;
+                }),
+        ]);
+
+        return new Schema(new SchemaConfig(query: $query, mutation: $mutation, subscription: $subscription));
     }
 }

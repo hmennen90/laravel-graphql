@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hmennen90\GraphQL\Http;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 /**
  * Normalizes an incoming HTTP request into one or more GraphQL operations,
@@ -50,7 +51,47 @@ final class RequestParser
             ];
         }
 
+        if ($request->has('operations') && $request->has('map')) {
+            return $this->parseMultipart($request);
+        }
+
         return $request->json()->all();
+    }
+
+    /**
+     * Parse a GraphQL multipart request (file uploads): the `operations` JSON, a
+     * `map` from file field → variable paths, and the uploaded files.
+     *
+     * @return array<int|string, mixed>
+     */
+    private function parseMultipart(Request $request): array
+    {
+        $operationsInput = $request->input('operations');
+        if (! is_string($operationsInput)) {
+            return [];
+        }
+        $operations = json_decode($operationsInput, true);
+        if (! is_array($operations)) {
+            return [];
+        }
+
+        $mapInput = $request->input('map');
+        $map = is_string($mapInput) ? json_decode($mapInput, true) : null;
+        if (is_array($map)) {
+            foreach ($map as $fileKey => $paths) {
+                if (! is_array($paths)) {
+                    continue;
+                }
+                $file = $request->file((string) $fileKey);
+                foreach ($paths as $path) {
+                    if (is_string($path)) {
+                        Arr::set($operations, $path, $file);
+                    }
+                }
+            }
+        }
+
+        return $operations;
     }
 
     /**

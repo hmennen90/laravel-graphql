@@ -37,6 +37,40 @@ resolvers through the execution context, delegating to Laravel Gates/policies.
 Argument validation integrates with Laravel's validator; failures surface under
 `extensions.validation` in the error response.
 
+## File uploads
+
+Add the `Upload` scalar (`Hmennen90\GraphQL\Support\UploadType::make()`) to your
+schema and send a [GraphQL multipart request](https://github.com/jaydenseric/graphql-multipart-request-spec)
+(`operations` + `map` + files). Uploaded files arrive as `Illuminate\Http\UploadedFile`
+instances in your resolver arguments.
+
+## Persisted queries (APQ)
+
+Enable Apollo Automatic Persisted Queries:
+
+```php
+'persisted_queries' => ['enabled' => true],
+```
+
+Clients send `extensions.persistedQuery.sha256Hash`; the first request registers the
+query, subsequent requests may send the hash alone.
+
+## Authorization directive
+
+`@can(ability: "…")` gates a field behind a Laravel Gate ability, checked before
+resolution. Register it as a schema directive:
+
+```php
+SchemaBuilder::fromSdl($sdl, $resolvers, schemaDirectives: [
+    'can' => new \Hmennen90\GraphQL\Directives\CanDirective(),
+]);
+```
+
+## Relay pagination
+
+`Hmennen90\GraphQL\Support\Relay\Relay` builds `connection`/`edge`/`pageInfo` types and
+cursor-based connection payloads from an array of nodes.
+
 ## Subscriptions
 
 Subscriptions use Laravel broadcasting. Enable them in config:
