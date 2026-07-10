@@ -19,12 +19,12 @@ use Hmennen90\GraphQL\Engine\Type\Definition\UnionType;
  * and `_entities(representations: [_Any!]!)` query fields plus the `_Any`,
  * `_Service` and `_Entity` types, with per-type entity reference resolvers.
  *
- * @phpstan-type EntityConfig array{model: class-string, resolve: callable(array<string, mixed>): mixed}
+ * @phpstan-type EntityConfig array{model: class-string, resolve: callable(array<string, mixed>): mixed, keys?: string|list<string>, key?: string|list<string>, shareable?: list<string>, external?: list<string>, requires?: array<string, string>, provides?: array<string, string>}
  */
 final class Federation
 {
     /**
-     * @param  array<string, array{model: class-string, resolve: callable(array<string, mixed>): mixed}>  $entities
+     * @param  array<string, array{model: class-string, resolve: callable(array<string, mixed>): mixed, keys?: string|list<string>, key?: string|list<string>, shareable?: list<string>, external?: list<string>, requires?: array<string, string>, provides?: array<string, string>}>  $entities
      */
     public static function subgraph(Schema $base, array $entities): Schema
     {
@@ -64,7 +64,7 @@ final class Federation
             FieldDefinition::make('sdl', Type::nonNull(Type::string())),
         ]);
 
-        $sdl = SchemaPrinter::print($base);
+        $sdl = SchemaPrinter::print($base, FederationAnnotations::fromConfig($entities));
 
         $fields = array_values($query->fields());
         $fields[] = FieldDefinition::make('_service', Type::nonNull($service), static fn (): array => ['sdl' => $sdl]);

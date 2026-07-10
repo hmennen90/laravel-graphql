@@ -45,15 +45,22 @@ final class FederationTest extends TestCase
             'User' => [
                 'model' => FedUser::class,
                 'resolve' => static fn (array $representation): ?FedUser => FedUser::find($representation['id'] ?? null),
+                'keys' => 'id',
+                'shareable' => ['name'],
             ],
         ]);
     }
 
-    public function test_service_field_exposes_the_subgraph_sdl(): void
+    public function test_service_field_exposes_the_federated_subgraph_sdl(): void
     {
-        $result = Executor::execute($this->subgraph(), Parser::parse('{ _service { sdl } }'))->toArray();
+        $sdl = Executor::execute($this->subgraph(), Parser::parse('{ _service { sdl } }'))->toArray()['data']['_service']['sdl'];
 
-        $this->assertStringContainsString('type User', $result['data']['_service']['sdl']);
+        $this->assertStringContainsString('type User @key(fields: "id")', $sdl);
+        $this->assertStringContainsString('name: String @shareable', $sdl);
+        $this->assertStringContainsString('@link(url: "https://specs.apollo.dev/federation/v2.3"', $sdl);
+        $this->assertStringContainsString('"@shareable"', $sdl);
+        // federation plumbing types are not part of the developer-defined SDL
+        $this->assertStringNotContainsString('_entities', $sdl);
     }
 
     public function test_entities_resolves_a_representation_to_a_model(): void
