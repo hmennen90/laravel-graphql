@@ -43,6 +43,9 @@ final class Lexer
         return $this->lastToken;
     }
 
+    /**
+     * @phpstan-impure
+     */
     public function advance(): Token
     {
         return $this->lastToken = $this->readToken();
