@@ -88,6 +88,25 @@ Indicative results (Apple Silicon, PHP 8.4, identical SDL + in-memory data):
 - Caveat: validation cost depends on rule coverage; webonyx runs a larger standard rule
   set, so part of that gap reflects breadth, not just speed.
 
+## Eloquent directive layer (end-to-end)
+
+Measures the directive/filter stack itself — parse + validate + directive resolution +
+Eloquent over sqlite (200 rows):
+
+```bash
+./vendor/bin/phpunit tests/Benchmark/EloquentDirectiveBench.php
+```
+
+| Scenario | Median |
+|---|---|
+| `@all` (200 rows) | ~2.7 ms |
+| `@all` + `@eq` (1 match) | ~0.12 ms |
+| `@paginate` + `@eq` | ~0.19 ms |
+
+The filter directives add negligible overhead — `@eq` is *faster* here because it
+narrows the query to a single row instead of materialising all 200. Time tracks the
+number of rows resolved, not the directive machinery.
+
 ## Versus Lighthouse (end-to-end)
 
 The engine numbers above isolate the executor. This measures the **full stack** —
