@@ -79,6 +79,10 @@ final class GraphQLServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(SubscriptionManager::class);
+        $this->app->bind(
+            \Hmennen90\GraphQL\Subscriptions\Sse\EventStream::class,
+            \Hmennen90\GraphQL\Subscriptions\Sse\NullEventStream::class,
+        );
 
         $this->app->singleton(\Hmennen90\GraphQL\Eloquent\ModelResolver::class, static function (Application $app): \Hmennen90\GraphQL\Eloquent\ModelResolver {
             $config = $app->make(Repository::class);
@@ -193,6 +197,15 @@ final class GraphQLServiceProvider extends ServiceProvider
                     [GraphQLController::class, 'handle'],
                 )
                 ->name($this->string($config->get('graphql.route.name'), 'graphql'));
+        }
+
+        if ($config->get('graphql.subscriptions.sse.enabled') === true) {
+            Route::middleware($this->stringList($config->get('graphql.subscriptions.sse.middleware', ['api'])))
+                ->post(
+                    $this->string($config->get('graphql.subscriptions.sse.uri'), '/graphql/sse'),
+                    [\Hmennen90\GraphQL\Http\Controllers\SubscriptionSseController::class, 'handle'],
+                )
+                ->name('graphql.sse');
         }
 
         if ($config->get('graphql.graphiql.enabled') === true) {

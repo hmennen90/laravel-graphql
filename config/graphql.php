@@ -153,5 +153,14 @@ return [
         'broadcaster' => env('GRAPHQL_SUBSCRIPTION_BROADCASTER', 'reverb'),
         // 'redis' fans events out to the graphql-ws server via Redis pub/sub.
         'driver' => env('GRAPHQL_SUBSCRIPTION_DRIVER', 'broadcast'),
+
+        // Server-Sent Events transport — works over plain HTTP, no WebSocket server.
+        // Bind Hmennen90\GraphQL\Subscriptions\Sse\EventStream to a Redis-backed
+        // implementation to stream live subscription events.
+        'sse' => [
+            'enabled' => env('GRAPHQL_SUBSCRIPTION_SSE', false),
+            'uri' => '/graphql/sse',
+            'middleware' => ['api'],
+        ],
     ],
 ];

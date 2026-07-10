@@ -237,3 +237,21 @@ Set `graphql.subscriptions.driver` to `redis`; application code that calls
 `SubscriptionManager::broadcast($topic, $event)` then publishes to Redis pub/sub, and the
 server fans events out to connected clients. Without the extension the command exits with
 an instruction to install it — the core package stays dependency-light.
+
+### Server-Sent Events (SSE) transport
+
+For a transport that needs **no WebSocket server or extension**, enable the graphql-sse
+endpoint — it streams over plain HTTP:
+
+```php
+// config/graphql.php
+'subscriptions' => [
+    'sse' => ['enabled' => true, 'uri' => '/graphql/sse', 'middleware' => ['api']],
+],
+```
+
+A query or mutation POSTed to the endpoint streams one `next` frame then `complete`. For
+live subscriptions, bind `Hmennen90\GraphQL\Subscriptions\Sse\EventStream` to a
+Redis-backed implementation whose `listen($topic)` yields events as they are published;
+the controller writes each as a `next` frame until the client disconnects. The transport
+core (`SseProtocolHandler`) is transport-agnostic and unit-tested.
