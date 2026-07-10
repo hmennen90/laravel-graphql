@@ -1,3 +1,13 @@
+## [1.3.0](https://github.com/hmennen90/laravel-graphql/compare/v1.2.1...v1.3.0) (2026-07-10)
+
+### Features
+
+* **console:** graphql:lint — scan SDL for unsupported directives ([7fa373d](https://github.com/hmennen90/laravel-graphql/commit/7fa373d83e06f0eaf7e40d40c6f05748d156ba82))
+* **directives:** [@force](https://github.com/force)Delete and [@restore](https://github.com/restore) (soft deletes) ([e811f08](https://github.com/hmennen90/laravel-graphql/commit/e811f08ebd06bad8f3fa5a7cb5deaf758e6851dd))
+* **directives:** argument query-builder directives (@eq/@in/@like/@scope/[@limit](https://github.com/limit)…) ([1daec8f](https://github.com/hmennen90/laravel-graphql/commit/1daec8f838480ff1f994c80917f343e86b790b09))
+* **schema:** convention-based resolution for root query/mutation fields ([1fde77b](https://github.com/hmennen90/laravel-graphql/commit/1fde77b01df33c994711319aaa5f1dba2e6cf6a5))
+* **testing:** MakesGraphQLRequests trait (Lighthouse-compatible test API) ([23f796c](https://github.com/hmennen90/laravel-graphql/commit/23f796cc06ebe3561b3bce9dd47c12ce23e3fc68))
+
 ## [1.2.1](https://github.com/hmennen90/laravel-graphql/compare/v1.2.0...v1.2.1) (2026-07-10)
 
 ### Performance Improvements
