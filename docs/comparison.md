@@ -34,6 +34,9 @@ mature than long-standing projects.
 | GraphiQL | ✅ (plugin) | ✅ | n/a | ✅ bundled |
 | Validation rules | comprehensive | via webonyx | comprehensive | comprehensive spec set |
 | Custom directives | ✅ many | ⚠️ some | via engine | ✅ runtime + SDL build-time |
+| Eloquent CRUD directives | ✅✅ (`@all/@find/@paginate/@create`…) | ❌ | n/a | ✅ `@all/@find/@first/@paginate/@create/@update/@delete/@upsert` |
+| Relation directives | ✅ | ❌ | n/a | ✅ `@hasMany/@hasOne/@belongsTo/@belongsToMany/@count` |
+| Filtering / sorting directives | ✅ `@whereConditions/@orderBy` | ❌ | n/a | ✅ `@whereConditions/@orderBy` (column allow-lists) |
 | SDL type extensions (`extend`) | ✅ | n/a | ✅ | ✅ object/interface/input |
 | Schema self-validation | ✅ | ✅ | ✅ | ✅ |
 | `@oneOf` / `@specifiedBy` | ⚠️ partial | — | ✅ | ✅ |
@@ -54,16 +57,18 @@ mature than long-standing projects.
 - **No double implementation.** Lighthouse: the entity shape lives in the SDL type
   *and* the Eloquent model *and* often a transformer/type class. Here: one
   declaration, resolvers read your model directly.
-- **No directive DSL.** Lighthouse expresses behaviour through schema directives
-  (`@field`, `@all`, `@paginate`, `@can`, `@rules`, …). Here behaviour is plain PHP
-  callables — nothing new to learn, full IDE support, easy to debug/step through.
+- **Directives *or* plain callables.** Lighthouse forces its schema-directive DSL.
+  Here you can use the same style — `@all`, `@find`, `@paginate`, `@hasMany`,
+  `@whereConditions`, `@create`… over Eloquent — *or* drop to plain PHP resolver
+  callables, whichever fits. No lock-in to a DSL.
 - **Own engine.** Lighthouse runs on `webonyx/graphql-php`; this ships its own
   lexer/parser/validator/executor, so there is one fewer third-party dependency.
 - **Schema styles.** Lighthouse is SDL-only; this also supports code-first and
   attribute-driven schemas that compile to the same internal schema.
-- **Trade-off.** Lighthouse has a far larger directive ecosystem, more validation
-  rules, mature subscriptions and a big community. This package is younger and
-  intentionally smaller.
+- **Trade-off.** Lighthouse still has a larger directive catalogue (nested
+  mutations, Scout, federation, more validation helpers), mature subscriptions and
+  a big community. This package now covers the core CRUD/relation/filter/pagination
+  directives but is younger.
 
 ### vs. rebing/graphql-laravel (code-first)
 

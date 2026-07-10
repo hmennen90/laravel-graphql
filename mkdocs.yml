@@ -48,4 +48,5 @@ nav:
   - Schema (code-first): schema-code-first.md
   - Schema (SDL): schema-sdl.md
   - Laravel Integration: laravel.md
+  - Eloquent Directives: eloquent.md
   - Comparison: comparison.md
