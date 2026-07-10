@@ -1,3 +1,10 @@
+## [1.2.0](https://github.com/hmennen90/laravel-graphql/compare/v1.1.0...v1.2.0) (2026-07-10)
+
+### Features
+
+* **console:** graphql:validate, graphql:print --write, make:graphql-type/directive ([d083edd](https://github.com/hmennen90/laravel-graphql/commit/d083edd48ece404d6515a86e15df256511cd700f))
+* **console:** schema cache (graphql:cache/clear) + scalar/query/mutation generators ([b03d437](https://github.com/hmennen90/laravel-graphql/commit/b03d4377f295b30da53199904ee1247e9b7cfe10))
+
 ## [1.1.0](https://github.com/hmennen90/laravel-graphql/compare/v1.0.0...v1.1.0) (2026-07-10)
 
 ### Features
