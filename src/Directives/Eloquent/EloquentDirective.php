@@ -33,6 +33,16 @@ abstract readonly class EloquentDirective implements SchemaDirective
     }
 
     /**
+     * Call a method that lives on an Eloquent trait (e.g. SoftDeletes' `restore()` /
+     * `withTrashed()`), which is not on the base Model type. Guarded at the call site
+     * by a `class_uses_recursive` check.
+     */
+    protected static function callDynamic(object $target, string $method): mixed
+    {
+        return $target->{$method}();
+    }
+
+    /**
      * @param  array<array-key, mixed>  $args
      * @return array<string, mixed>
      */
