@@ -41,3 +41,31 @@ Type::nonNull(Type::listOf(Type::id()));    // [ID]!
 `EnumType`, `InterfaceType` and `UnionType` are available under
 `Hmennen90\GraphQL\Engine\Type\Definition`. Abstract types resolve their concrete
 type via a `resolveType` callback.
+
+## Attribute-driven types
+
+You can also declare types with PHP attributes and let the reflection builder wire
+the resolvers (each annotated method *is* the resolver):
+
+```php
+use Hmennen90\GraphQL\Engine\Building\CodeFirst\Attributes\GraphQLField;
+use Hmennen90\GraphQL\Engine\Building\CodeFirst\Attributes\GraphQLType;
+use Hmennen90\GraphQL\Engine\Building\CodeFirst\AttributeSchemaBuilder;
+use Hmennen90\GraphQL\Engine\Schema\Schema;
+use Hmennen90\GraphQL\Engine\Schema\SchemaConfig;
+
+#[GraphQLType(name: 'Query')]
+final class QueryType
+{
+    #[GraphQLField(type: 'String!')]
+    public function hello(): string
+    {
+        return 'world';
+    }
+}
+
+$types = (new AttributeSchemaBuilder())->build([QueryType::class]);
+$schema = new Schema(new SchemaConfig(query: $types['Query']));
+```
+
+Type expressions accept the full GraphQL syntax (`String!`, `[User!]!`, …).
