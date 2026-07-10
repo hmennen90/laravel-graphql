@@ -40,6 +40,7 @@ mature than long-standing projects.
 | File uploads (multipart) | ✅ | ✅ | n/a | ✅ `Upload` scalar |
 | Persisted queries (APQ) | ✅ | ⚠️ | n/a | ✅ Apollo APQ |
 | Relay pagination | ✅ | ⚠️ | manual | ✅ connection helpers |
+| HTTP caching | `@cacheControl` | ⚠️ | manual | ✅ `@cacheControl` + Cache-Control |
 | Minimum PHP | 8.1+ | 8.0+ | 7.4 / 8+ | **8.4+** |
 | Static analysis | — | — | partial | **PHPStan level 10** |
 | Maturity | mature, large community | mature | mature (de-facto engine) | **new / experimental** |

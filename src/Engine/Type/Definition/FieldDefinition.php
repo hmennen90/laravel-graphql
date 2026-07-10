@@ -16,6 +16,7 @@ final class FieldDefinition
 
     /**
      * @param  array<int|string, Argument>  $args
+     * @param  array<string, mixed>  $metadata  Arbitrary schema metadata (e.g. cache hints).
      */
     public function __construct(
         private readonly string $name,
@@ -24,6 +25,7 @@ final class FieldDefinition
         array $args = [],
         private readonly ?string $description = null,
         private readonly ?string $deprecationReason = null,
+        private readonly array $metadata = [],
     ) {
         $this->resolve = $resolve !== null ? Closure::fromCallable($resolve) : null;
 
@@ -36,6 +38,7 @@ final class FieldDefinition
 
     /**
      * @param  array<int|string, Argument>  $args
+     * @param  array<string, mixed>  $metadata
      */
     public static function make(
         string $name,
@@ -44,8 +47,14 @@ final class FieldDefinition
         array $args = [],
         ?string $description = null,
         ?string $deprecationReason = null,
+        array $metadata = [],
     ): self {
-        return new self($name, $type, $resolve, $args, $description, $deprecationReason);
+        return new self($name, $type, $resolve, $args, $description, $deprecationReason, $metadata);
+    }
+
+    public function metadata(string $key): mixed
+    {
+        return $this->metadata[$key] ?? null;
     }
 
     public function getName(): string

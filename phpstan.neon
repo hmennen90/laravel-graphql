@@ -5,4 +5,7 @@ parameters:
     level: 10
     paths:
         - src
+    excludePaths:
+        # Requires the Swoole/OpenSwoole extension (environment-specific, not in CI).
+        - src/Subscriptions/Swoole/*
     tmpDir: build/phpstan

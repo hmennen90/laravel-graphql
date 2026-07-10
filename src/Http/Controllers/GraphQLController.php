@@ -6,6 +6,7 @@ namespace Hmennen90\GraphQL\Http\Controllers;
 
 use Hmennen90\GraphQL\Execution\Context;
 use Hmennen90\GraphQL\GraphQL;
+use Hmennen90\GraphQL\Http\CacheControlAnalyzer;
 use Hmennen90\GraphQL\Http\PersistedQueryException;
 use Hmennen90\GraphQL\Http\PersistedQueryResolver;
 use Hmennen90\GraphQL\Http\RequestParser;
@@ -26,6 +27,7 @@ final class GraphQLController
         private readonly Repository $config,
         private readonly SubscriptionManager $subscriptions,
         private readonly PersistedQueryResolver $persistedQueries,
+        private readonly CacheControlAnalyzer $cacheControl,
     ) {
     }
 
@@ -79,7 +81,18 @@ final class GraphQLController
             $results[] = $this->responses->build($result);
         }
 
-        return new JsonResponse($parser->isBatch() ? $results : $results[0]);
+        $response = new JsonResponse($parser->isBatch() ? $results : $results[0]);
+
+        if (! $parser->isBatch() && $this->config->get('graphql.cache_control.enabled') === true && ! isset($results[0]['errors'])) {
+            $hint = $this->cacheControl->analyze($this->graphql->schema(), $operations[0]['query'], $operations[0]['operationName']);
+            if ($hint !== null) {
+                $response->headers->set('Cache-Control', $hint['maxAge'] > 0
+                    ? sprintf('%s, max-age=%d', strtolower($hint['scope']), $hint['maxAge'])
+                    : 'no-store');
+            }
+        }
+
+        return $response;
     }
 
     /**

@@ -21,6 +21,7 @@ final class SubscriptionManager
         private readonly GraphQL $graphql,
         private readonly ResponseBuilder $responses,
         private readonly Dispatcher $events,
+        private readonly EventPublisher $publisher,
     ) {
     }
 
@@ -37,6 +38,9 @@ final class SubscriptionManager
 
     public function broadcast(string $topic, mixed $root): void
     {
+        // Fan out to any out-of-process transport (e.g. the graphql-ws server).
+        $this->publisher->publish($topic, $root);
+
         foreach ($this->store->subscribersByTopic($topic) as $subscriber) {
             $result = $this->graphql->execute(
                 $subscriber->query,

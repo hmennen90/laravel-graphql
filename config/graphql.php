@@ -95,11 +95,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cache-Control header from @cacheControl hints
+    |--------------------------------------------------------------------------
+    */
+    'cache_control' => [
+        'enabled' => env('GRAPHQL_CACHE_CONTROL', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Subscriptions (v1: broadcasting seam)
     |--------------------------------------------------------------------------
     */
     'subscriptions' => [
         'enabled' => false,
         'broadcaster' => env('GRAPHQL_SUBSCRIPTION_BROADCASTER', 'reverb'),
+        // 'redis' fans events out to the graphql-ws server via Redis pub/sub.
+        'driver' => env('GRAPHQL_SUBSCRIPTION_DRIVER', 'broadcast'),
     ],
 ];

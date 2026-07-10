@@ -71,6 +71,19 @@ SchemaBuilder::fromSdl($sdl, $resolvers, schemaDirectives: [
 `Hmennen90\GraphQL\Support\Relay\Relay` builds `connection`/`edge`/`pageInfo` types and
 cursor-based connection payloads from an array of nodes.
 
+## HTTP caching (`@cacheControl`)
+
+Annotate fields with `@cacheControl(maxAge: Int, scope: String)` and enable the header:
+
+```php
+'cache_control' => ['enabled' => true],
+```
+
+For a query, the endpoint emits `Cache-Control` using the **minimum** `maxAge` of the
+selected fields and `private` if any field is private. A field without a hint makes the
+response `no-store`. Combined with Automatic Persisted Queries (GET + hash), this enables
+CDN/HTTP caching — the safe, idiomatic GraphQL approach (no per-user response store).
+
 ## Subscriptions
 
 Subscriptions use Laravel broadcasting. Enable them in config:
@@ -119,5 +132,13 @@ $server->on('message', function ($server, $frame) use ($handler) {
 $server->start();
 ```
 
-`SwooleConnection` is a thin adapter implementing `Connection` (`send`/`close`/`id`).
-The event fan-out uses Redis pub/sub so multiple server processes stay in sync.
+A bundled Swoole/OpenSwoole driver is available. With the extension installed, run:
+
+```bash
+php artisan graphql:subscriptions:serve --host=0.0.0.0 --port=9501
+```
+
+Set `graphql.subscriptions.driver` to `redis`; application code that calls
+`SubscriptionManager::broadcast($topic, $event)` then publishes to Redis pub/sub, and the
+server fans events out to connected clients. Without the extension the command exits with
+an instruction to install it — the core package stays dependency-light.
