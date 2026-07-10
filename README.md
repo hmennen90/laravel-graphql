@@ -388,6 +388,7 @@ error handling, security limits, persisted queries, cache-control and subscripti
 ```bash
 php artisan graphql:print [--write[=path]]   # export the schema as SDL
 php artisan graphql:validate                 # validate the schema (CI guard)
+php artisan graphql:lint                      # report unsupported directives (migration aid)
 php artisan graphql:cache                     # cache the parsed SDL for faster boots
 php artisan graphql:clear                     # drop schema cache + APQ entries
 php artisan graphql:subscriptions:serve       # graphql-ws WebSocket server (Swoole)
@@ -689,12 +690,13 @@ webonyx/graphql-php) is in the
 
 ## Migrating from Lighthouse
 
-Not a drop-in replacement, but a realistic migration: the CRUD directive **names and
-semantics** were kept compatible, so a schema on the common core
-(`@all/@find/@paginate/@hasMany/@whereConditions/@orderBy/@create…`) moves over with
-config translation. Convention-resolved query/mutation classes carry over too
-(`graphql.namespaces`). Soft-delete/`@scope`/`@builder` directives, custom PHP
-directives and subscriptions need rework. See the full
+Not a drop-in replacement, but a realistic migration: the CRUD, relation, filter/sort
+(incl. single-field `@eq/@like/@scope/@limit…`), soft-delete and auth directive
+**names and semantics** were kept compatible, and convention-resolved query/mutation
+classes carry over (`graphql.namespaces`). Run **`php artisan graphql:lint`** to get a
+precise list of anything unsupported (e.g. `@builder`, `@with`, subscriptions), and use
+the `MakesGraphQLRequests` test trait so existing feature tests keep working. See the
+full
 [migration guide](https://hmennen90.github.io/laravel-graphql/migrating-from-lighthouse/).
 
 ## License

@@ -58,6 +58,7 @@ php artisan graphql:print                 # print the schema as SDL
 php artisan graphql:print --write         # write SDL to base_path/schema.graphql
 php artisan graphql:print --write=docs/schema.graphql
 php artisan graphql:validate              # validate the configured schema (CI guard)
+php artisan graphql:lint                  # report unsupported directives (migration aid)
 php artisan graphql:cache                 # cache the parsed SDL (AST) for faster boots
 php artisan graphql:clear                 # drop the schema cache + persisted-query (APQ) entries
 php artisan graphql:subscriptions:serve   # run the graphql-ws WebSocket server (Swoole)

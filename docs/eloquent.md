@@ -56,11 +56,32 @@ resolve the Eloquent relation named after the field (override with `relation:`).
 
 Both compose with `@all` and `@paginate`, which apply them to the query.
 
+### Single-argument filters
+
+For simple filters, put a directive directly on an argument — the column defaults to
+the argument name (override with `key:`). These apply to `@all`/`@paginate` queries:
+
+```graphql
+type Query {
+  posts(
+    title: String @like(key: "title")
+    authorId: ID @eq
+    tags: [String!] @in(key: "tag")
+    minViews: Int @scope(name: "popular")
+    limit: Int @limit
+  ): [Post!]! @all
+}
+```
+
+Available: `@eq`, `@neq`, `@in`, `@notIn`, `@like`, `@whereBetween`, `@whereNull`,
+`@scope(name:)` (applies an Eloquent scope with the value) and `@limit`.
+
 ## Writing
 
 `@create`, `@update`, `@delete`, `@upsert` — resolved from the field arguments, each in
 a database transaction. `@update`/`@delete`/`@upsert` locate the record by `id` (override
-with `key:`).
+with `key:`). For soft-delete models, `@forceDelete` permanently deletes and `@restore`
+brings back a trashed record.
 
 ## Configuration
 

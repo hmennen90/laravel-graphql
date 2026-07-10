@@ -36,7 +36,9 @@ mature than long-standing projects.
 | Custom directives | ✅ many | ⚠️ some | via engine | ✅ runtime + SDL build-time |
 | Eloquent CRUD directives | ✅✅ (`@all/@find/@paginate/@create`…) | ❌ | n/a | ✅ `@all/@find/@first/@paginate/@create/@update/@delete/@upsert` |
 | Relation directives | ✅ | ❌ | n/a | ✅ `@hasMany/@hasOne/@belongsTo/@belongsToMany/@count` |
-| Filtering / sorting directives | ✅ `@whereConditions/@orderBy` | ❌ | n/a | ✅ `@whereConditions/@orderBy` (column allow-lists) |
+| Filtering / sorting directives | ✅ `@whereConditions/@orderBy` + single-field | ❌ | n/a | ✅ `@whereConditions/@orderBy` + `@eq/@neq/@in/@like/@whereBetween/@whereNull/@scope/@limit` |
+| Soft-delete directives | `@trashed/@forceDelete/@restore` | ❌ | n/a | ✅ `@forceDelete/@restore` |
+| Test helper trait | ✅ `MakesGraphQLRequests` | ❌ | n/a | ✅ `MakesGraphQLRequests` |
 | SDL type extensions (`extend`) | ✅ | n/a | ✅ | ✅ object/interface/input |
 | Schema self-validation | ✅ | ✅ | ✅ | ✅ |
 | `@oneOf` / `@specifiedBy` | ⚠️ partial | — | ✅ | ✅ |
@@ -47,7 +49,7 @@ mature than long-standing projects.
 | Code-first attribute directives | ❌ (SDL only) | n/a | n/a | ✅ `#[All]`/`#[Paginate]`… (same impl. as SDL) |
 | Federation | ✅ v2 | ❌ | plugin | ✅ **v2 subgraph** (`@key/@shareable/@requires`, `_service`/`_entities`) |
 | Performance harness | — | — | — | ✅ `composer bench` (parse/build/validate/execute) |
-| Artisan commands | print/validate/cache/generators | some | n/a | print/validate/cache/clear + `make:graphql-*` |
+| Artisan commands | print/validate/cache/generators | some | n/a | print/validate/**lint**/cache/clear + `make:graphql-*` |
 | Schema caching | ✅ (`lighthouse:cache`) | ⚠️ | n/a | ✅ AST cache (`graphql:cache`) |
 | File uploads (multipart) | ✅ | ✅ | n/a | ✅ `Upload` scalar |
 | Persisted queries (APQ) | ✅ | ⚠️ | n/a | ✅ Apollo APQ |
