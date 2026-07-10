@@ -28,6 +28,7 @@ mature than long-standing projects.
 | Subscriptions | ✅ full (Pusher/Echo) | ⚠️ limited | n/a | ✅ broadcasting (Reverb/Pusher) |
 | Query batching | ✅ | ✅ | n/a | ✅ |
 | GraphiQL | ✅ (plugin) | ✅ | n/a | ✅ bundled |
+| Validation rules | comprehensive | via webonyx | comprehensive | comprehensive spec set |
 | Field authorization | `@can` directive | method-based | manual | Gate via resolver context |
 | Argument validation | `@rules` directive | Laravel rules | manual | Laravel validator in resolver |
 | Minimum PHP | 8.1+ | 8.0+ | 7.4 / 8+ | **8.4+** |
@@ -70,8 +71,8 @@ mature than long-standing projects.
 - **This is not a wrapper.** It does not depend on webonyx; the engine is a separate
   hand-written implementation of the spec algorithms.
 - **Trade-off.** webonyx is the de-facto, battle-tested engine with the most
-  complete spec coverage. This engine currently implements a core subset of
-  validation rules (being expanded) and a smaller directive set.
+  complete spec coverage. This engine implements the comprehensive validation
+  rule set and a smaller (built-in) directive set.
 
 ## When to choose which
 

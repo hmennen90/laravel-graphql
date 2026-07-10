@@ -11,16 +11,21 @@ use Hmennen90\GraphQL\Engine\Language\AST\FieldNode;
 use Hmennen90\GraphQL\Engine\Language\AST\FragmentDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\FragmentSpreadNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InlineFragmentNode;
+use Hmennen90\GraphQL\Engine\Language\AST\ListTypeNode;
 use Hmennen90\GraphQL\Engine\Language\AST\ListValueNode;
+use Hmennen90\GraphQL\Engine\Language\AST\NamedTypeNode;
 use Hmennen90\GraphQL\Engine\Language\AST\Node;
+use Hmennen90\GraphQL\Engine\Language\AST\NonNullTypeNode;
 use Hmennen90\GraphQL\Engine\Language\AST\NullValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\ObjectValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\OperationDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\OperationType;
 use Hmennen90\GraphQL\Engine\Language\AST\SelectionSetNode;
+use Hmennen90\GraphQL\Engine\Language\AST\TypeNode;
 use Hmennen90\GraphQL\Engine\Language\AST\ValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\VariableNode;
 use Hmennen90\GraphQL\Engine\Schema\Schema;
+use Hmennen90\GraphQL\Engine\Type\Definition\AbstractType;
 use Hmennen90\GraphQL\Engine\Type\Definition\CompositeType;
 use Hmennen90\GraphQL\Engine\Type\Definition\FieldDefinition;
 use Hmennen90\GraphQL\Engine\Type\Definition\InputObjectType;
@@ -28,6 +33,7 @@ use Hmennen90\GraphQL\Engine\Type\Definition\InputType;
 use Hmennen90\GraphQL\Engine\Type\Definition\InterfaceType;
 use Hmennen90\GraphQL\Engine\Type\Definition\LeafType;
 use Hmennen90\GraphQL\Engine\Type\Definition\ListOfType;
+use Hmennen90\GraphQL\Engine\Type\Definition\NamedType;
 use Hmennen90\GraphQL\Engine\Type\Definition\NonNull;
 use Hmennen90\GraphQL\Engine\Type\Definition\ObjectType;
 use Hmennen90\GraphQL\Engine\Type\Definition\Type;
@@ -46,6 +52,9 @@ final class DocumentValidator
 
     /** @var array<string, FragmentDefinitionNode> */
     private array $fragments = [];
+
+    /** @var array<int, array{type: Type, name: string, node: Node}> */
+    private array $variableUsages = [];
 
     private function __construct(private readonly Schema $schema, private readonly DocumentNode $document)
     {
@@ -69,6 +78,11 @@ final class DocumentValidator
 
     private function run(): void
     {
+        $this->checkUniqueOperationNames();
+        $this->checkLoneAnonymousOperation();
+        $this->checkUniqueFragmentNames();
+        $this->checkFragmentDefinitions();
+
         foreach ($this->document->definitions as $definition) {
             if ($definition instanceof OperationDefinitionNode) {
                 $this->validateOperation($definition);
@@ -98,8 +112,14 @@ final class DocumentValidator
             $this->error('Subscription operations must select only a single top-level field.', $operation);
         }
 
+        $this->checkDirectives($operation->directives, strtoupper($operation->operation->value));
+        $this->checkUniqueVariableNames($operation);
+        $this->checkVariablesAreInputTypes($operation);
+
+        $this->variableUsages = [];
         $this->checkSelectionSet($rootType, $operation->selectionSet, []);
         $this->checkVariableUsage($operation);
+        $this->checkVariablesInAllowedPosition($operation);
     }
 
     /**
@@ -111,19 +131,36 @@ final class DocumentValidator
             if ($selection instanceof FieldNode) {
                 $this->checkField($parentType, $selection, $visitedFragments);
             } elseif ($selection instanceof InlineFragmentNode) {
+                $this->checkDirectives($selection->directives, 'INLINE_FRAGMENT');
                 $type = $parentType;
                 if ($selection->typeCondition !== null) {
-                    $resolved = $this->compositeType($selection->typeCondition->name);
-                    if ($resolved === null) {
-                        $this->error(sprintf('Unknown type "%s".', $selection->typeCondition->name), $selection);
+                    $name = $selection->typeCondition->name;
+                    $namedType = $this->schema->getType($name);
+                    if ($namedType === null) {
+                        $this->error(sprintf('Unknown type "%s".', $name), $selection);
 
                         continue;
                     }
-                    $type = $resolved;
+                    if (! $namedType instanceof CompositeType) {
+                        $this->error(sprintf('Fragment cannot condition on non composite type "%s".', $name), $selection);
+
+                        continue;
+                    }
+                    if (! $this->doTypesOverlap($parentType, $namedType)) {
+                        $this->error(sprintf(
+                            'Fragment cannot be spread here as objects of type "%s" can never be of type "%s".',
+                            $parentType->name(),
+                            $name,
+                        ), $selection);
+
+                        continue;
+                    }
+                    $type = $namedType;
                 }
                 $this->checkSelectionSet($type, $selection->selectionSet, $visitedFragments);
             } elseif ($selection instanceof FragmentSpreadNode) {
-                $this->checkFragmentSpread($selection, $visitedFragments);
+                $this->checkDirectives($selection->directives, 'FRAGMENT_SPREAD');
+                $this->checkFragmentSpread($selection, $parentType, $visitedFragments);
             }
         }
     }
@@ -168,6 +205,8 @@ final class DocumentValidator
             return;
         }
 
+        $this->checkDirectives($field->directives, 'FIELD');
+
         $fieldDef = $parentType->getField($field->name);
         $this->checkArguments($fieldDef, $field, $parentType->name());
 
@@ -199,7 +238,11 @@ final class DocumentValidator
     {
         $provided = [];
         foreach ($field->arguments as $argument) {
+            if (isset($provided[$argument->name])) {
+                $this->error(sprintf('There can be only one argument named "%s".', $argument->name), $argument);
+            }
             $provided[$argument->name] = $argument->value;
+
             $argDef = $fieldDef->getArg($argument->name);
             if ($argDef === null) {
                 $this->error(sprintf(
@@ -213,6 +256,7 @@ final class DocumentValidator
             }
 
             $this->checkValue($argDef->getType(), $argument->value, sprintf('Argument "%s"', $argument->name), $argument);
+            $this->collectVariableUsages($argDef->getType(), $argument->value);
         }
 
         foreach ($fieldDef->args() as $argDef) {
@@ -329,7 +373,7 @@ final class DocumentValidator
     /**
      * @param  array<string, true>  $visitedFragments
      */
-    private function checkFragmentSpread(FragmentSpreadNode $spread, array $visitedFragments): void
+    private function checkFragmentSpread(FragmentSpreadNode $spread, CompositeType $parentType, array $visitedFragments): void
     {
         if (! isset($this->fragments[$spread->name])) {
             $this->error(sprintf('Unknown fragment "%s".', $spread->name), $spread);
@@ -344,7 +388,16 @@ final class DocumentValidator
         $fragment = $this->fragments[$spread->name];
         $type = $this->compositeType($fragment->typeCondition->name);
         if ($type === null) {
-            $this->error(sprintf('Unknown type "%s".', $fragment->typeCondition->name), $fragment);
+            return; // reported by checkFragmentDefinitions()
+        }
+
+        if (! $this->doTypesOverlap($parentType, $type)) {
+            $this->error(sprintf(
+                'Fragment "%s" cannot be spread here as objects of type "%s" can never be of type "%s".',
+                $spread->name,
+                $parentType->name(),
+                $type->name(),
+            ), $spread);
 
             return;
         }
@@ -483,6 +536,300 @@ final class DocumentValidator
         foreach ($spreads as $spread => $_) {
             $this->detectCycle($spread, $onStack, $seen);
         }
+    }
+
+    private function checkUniqueOperationNames(): void
+    {
+        $seen = [];
+        foreach ($this->document->definitions as $definition) {
+            if ($definition instanceof OperationDefinitionNode && $definition->name !== null) {
+                if (isset($seen[$definition->name])) {
+                    $this->error(sprintf('There can be only one operation named "%s".', $definition->name), $definition);
+                }
+                $seen[$definition->name] = true;
+            }
+        }
+    }
+
+    private function checkLoneAnonymousOperation(): void
+    {
+        $operations = [];
+        foreach ($this->document->definitions as $definition) {
+            if ($definition instanceof OperationDefinitionNode) {
+                $operations[] = $definition;
+            }
+        }
+
+        if (count($operations) < 2) {
+            return;
+        }
+
+        foreach ($operations as $operation) {
+            if ($operation->name === null) {
+                $this->error('This anonymous operation must be the only defined operation.', $operation);
+            }
+        }
+    }
+
+    private function checkUniqueFragmentNames(): void
+    {
+        $seen = [];
+        foreach ($this->document->definitions as $definition) {
+            if ($definition instanceof FragmentDefinitionNode) {
+                if (isset($seen[$definition->name])) {
+                    $this->error(sprintf('There can be only one fragment named "%s".', $definition->name), $definition);
+                }
+                $seen[$definition->name] = true;
+            }
+        }
+    }
+
+    private function checkFragmentDefinitions(): void
+    {
+        foreach ($this->fragments as $fragment) {
+            $this->checkDirectives($fragment->directives, 'FRAGMENT_DEFINITION');
+
+            $name = $fragment->typeCondition->name;
+            $type = $this->schema->getType($name);
+            if ($type === null) {
+                $this->error(sprintf('Unknown type "%s".', $name), $fragment);
+            } elseif (! $type instanceof CompositeType) {
+                $this->error(sprintf(
+                    'Fragment "%s" can only be on an object, interface or union, not "%s".',
+                    $fragment->name,
+                    $name,
+                ), $fragment);
+            }
+        }
+    }
+
+    private function checkUniqueVariableNames(OperationDefinitionNode $operation): void
+    {
+        $seen = [];
+        foreach ($operation->variableDefinitions as $definition) {
+            $name = $definition->variable->name;
+            if (isset($seen[$name])) {
+                $this->error(sprintf('There can be only one variable named "$%s".', $name), $definition);
+            }
+            $seen[$name] = true;
+        }
+    }
+
+    private function checkVariablesAreInputTypes(OperationDefinitionNode $operation): void
+    {
+        foreach ($operation->variableDefinitions as $definition) {
+            $type = $this->typeFromAst($definition->type);
+            if ($type === null) {
+                $this->error(sprintf('Unknown type "%s".', $this->namedTypeName($definition->type)), $definition);
+
+                continue;
+            }
+
+            $named = Type::getNamedType($type);
+            if (! $named instanceof InputType) {
+                $this->error(sprintf(
+                    'Variable "$%s" of type "%s" is not an input type.',
+                    $definition->variable->name,
+                    $named->name(),
+                ), $definition);
+            }
+        }
+    }
+
+    private function checkVariablesInAllowedPosition(OperationDefinitionNode $operation): void
+    {
+        $defined = [];
+        foreach ($operation->variableDefinitions as $definition) {
+            $defined[$definition->variable->name] = [
+                'type' => $this->typeFromAst($definition->type),
+                'hasDefault' => $definition->defaultValue !== null,
+            ];
+        }
+
+        foreach ($this->variableUsages as $usage) {
+            $definition = $defined[$usage['name']] ?? null;
+            if ($definition === null || $definition['type'] === null) {
+                continue;
+            }
+
+            if (! $this->areTypesCompatible($definition['type'], $usage['type'], $definition['hasDefault'])) {
+                $this->error(sprintf(
+                    'Variable "$%s" of type "%s" cannot be used in position expecting type "%s".',
+                    $usage['name'],
+                    (string) $definition['type'],
+                    (string) $usage['type'],
+                ), $usage['node']);
+            }
+        }
+    }
+
+    private function collectVariableUsages(Type&InputType $type, ValueNode $value): void
+    {
+        if ($value instanceof VariableNode) {
+            $this->variableUsages[] = ['type' => $type, 'name' => $value->name, 'node' => $value];
+
+            return;
+        }
+
+        $nullable = $type instanceof NonNull ? $type->wrappedType() : $type;
+
+        if ($value instanceof ListValueNode && $nullable instanceof ListOfType) {
+            $inner = $nullable->wrappedType();
+            if ($inner instanceof InputType) {
+                foreach ($value->values as $item) {
+                    $this->collectVariableUsages($inner, $item);
+                }
+            }
+        } elseif ($value instanceof ObjectValueNode && $nullable instanceof InputObjectType) {
+            $fields = $nullable->fields();
+            foreach ($value->fields as $objectField) {
+                if (isset($fields[$objectField->name])) {
+                    $this->collectVariableUsages($fields[$objectField->name]->getType(), $objectField->value);
+                }
+            }
+        }
+    }
+
+    private function areTypesCompatible(Type $varType, Type $locationType, bool $hasDefault): bool
+    {
+        if ($locationType instanceof NonNull) {
+            if (! $varType instanceof NonNull) {
+                return $hasDefault && $this->areTypesCompatible($varType, $locationType->wrappedType(), $hasDefault);
+            }
+
+            return $this->areTypesCompatible($varType->wrappedType(), $locationType->wrappedType(), $hasDefault);
+        }
+
+        if ($varType instanceof NonNull) {
+            return $this->areTypesCompatible($varType->wrappedType(), $locationType, $hasDefault);
+        }
+
+        if ($locationType instanceof ListOfType) {
+            return $varType instanceof ListOfType
+                && $this->areTypesCompatible($varType->wrappedType(), $locationType->wrappedType(), $hasDefault);
+        }
+
+        if ($varType instanceof ListOfType) {
+            return false;
+        }
+
+        return $this->typeName($varType) === $this->typeName($locationType);
+    }
+
+    /**
+     * @param  array<int, \Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode>  $directives
+     */
+    private function checkDirectives(array $directives, string $location): void
+    {
+        $seen = [];
+        foreach ($directives as $directive) {
+            $def = $this->schema->getDirective($directive->name);
+            if ($def === null) {
+                $this->error(sprintf('Unknown directive "@%s".', $directive->name), $directive);
+
+                continue;
+            }
+
+            if (! in_array($location, $def->locations(), true)) {
+                $this->error(sprintf('Directive "@%s" cannot be used at this location.', $directive->name), $directive);
+            }
+
+            if (! $def->isRepeatable()) {
+                if (isset($seen[$directive->name])) {
+                    $this->error(sprintf('The directive "@%s" can only be used once per location.', $directive->name), $directive);
+                }
+                $seen[$directive->name] = true;
+            }
+
+            $provided = [];
+            foreach ($directive->arguments as $argument) {
+                $provided[$argument->name] = true;
+                $argDef = $def->getArg($argument->name);
+                if ($argDef === null) {
+                    $this->error(sprintf('Unknown argument "%s" on directive "@%s".', $argument->name, $directive->name), $argument);
+
+                    continue;
+                }
+                $this->checkValue($argDef->getType(), $argument->value, sprintf('Argument "%s"', $argument->name), $argument);
+            }
+
+            foreach ($def->args() as $argDef) {
+                if ($argDef->getType() instanceof NonNull && ! $argDef->hasDefaultValue() && ! isset($provided[$argDef->getName()])) {
+                    $this->error(sprintf(
+                        'Directive "@%s" argument "%s" of type "%s" is required but not provided.',
+                        $directive->name,
+                        $argDef->getName(),
+                        (string) $argDef->getType(),
+                    ), $directive);
+                }
+            }
+        }
+    }
+
+    private function doTypesOverlap(CompositeType $a, CompositeType $b): bool
+    {
+        $bNames = $this->possibleObjectNames($b);
+        foreach ($this->possibleObjectNames($a) as $name) {
+            if (in_array($name, $bNames, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function possibleObjectNames(CompositeType $type): array
+    {
+        if ($type instanceof ObjectType) {
+            return [$type->name()];
+        }
+
+        if ($type instanceof AbstractType) {
+            return array_map(static fn (ObjectType $t): string => $t->name(), $this->schema->getPossibleTypes($type));
+        }
+
+        return [];
+    }
+
+    private function typeFromAst(TypeNode $node): ?Type
+    {
+        if ($node instanceof NonNullTypeNode) {
+            $inner = $this->typeFromAst($node->type);
+
+            return $inner !== null ? Type::nonNull($inner) : null;
+        }
+
+        if ($node instanceof ListTypeNode) {
+            $inner = $this->typeFromAst($node->type);
+
+            return $inner !== null ? Type::listOf($inner) : null;
+        }
+
+        if ($node instanceof NamedTypeNode) {
+            return $this->schema->getType($node->name);
+        }
+
+        return null;
+    }
+
+    private function namedTypeName(TypeNode $node): string
+    {
+        if ($node instanceof NonNullTypeNode || $node instanceof ListTypeNode) {
+            return $this->namedTypeName($node->type);
+        }
+        if ($node instanceof NamedTypeNode) {
+            return $node->name;
+        }
+
+        return '';
+    }
+
+    private function typeName(Type $type): ?string
+    {
+        return $type instanceof NamedType ? $type->name() : null;
     }
 
     private function compositeType(string $name): ?CompositeType
