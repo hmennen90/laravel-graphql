@@ -112,6 +112,10 @@ final class GraphQLServiceProvider extends ServiceProvider
             $registry->register('update', new \Hmennen90\GraphQL\Directives\Eloquent\UpdateDirective($models));
             $registry->register('delete', new \Hmennen90\GraphQL\Directives\Eloquent\DeleteDirective($models));
             $registry->register('upsert', new \Hmennen90\GraphQL\Directives\Eloquent\UpsertDirective($models));
+
+            if (class_exists(\Laravel\Scout\Builder::class)) {
+                $registry->register('search', new \Hmennen90\GraphQL\Directives\Eloquent\SearchDirective($models));
+            }
             $registry->register('can', new \Hmennen90\GraphQL\Directives\CanDirective());
             $registry->register('cacheControl', new \Hmennen90\GraphQL\Directives\CacheControlDirective());
 
