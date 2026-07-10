@@ -43,8 +43,10 @@ mature than long-standing projects.
 | Field authorization | `@can` directive | method-based | manual | Gate via context **and** `@can` directive |
 | Argument validation | `@rules` directive | Laravel rules | manual | resolver **and** `@rules`/`@validator` directives |
 | Argument sanitisers | `@trim`/`@hash`/`@spread` | — | — | `@trim`/`@hash`/`@globalId` |
-| Eloquent CRUD directives | ✅ large catalogue | — | — | ✅ read/relations/filter/sort/mutations/Scout |
-| Federation | ✅ v2 | — | plugin | ✅ subgraph (`_service`/`_entities`) |
+| Full-text search | `@search` (Scout) | ❌ | n/a | ✅ `@search` (Scout) |
+| Code-first attribute directives | ❌ (SDL only) | n/a | n/a | ✅ `#[All]`/`#[Paginate]`… (same impl. as SDL) |
+| Federation | ✅ v2 | ❌ | plugin | ✅ **v2 subgraph** (`@key/@shareable/@requires`, `_service`/`_entities`) |
+| Performance harness | — | — | — | ✅ `composer bench` (parse/build/validate/execute) |
 | File uploads (multipart) | ✅ | ✅ | n/a | ✅ `Upload` scalar |
 | Persisted queries (APQ) | ✅ | ⚠️ | n/a | ✅ Apollo APQ |
 | Relay pagination | ✅ | ⚠️ | manual | ✅ connection helpers |
@@ -93,8 +95,9 @@ mature than long-standing projects.
 - **This is not a wrapper.** It does not depend on webonyx; the engine is a separate
   hand-written implementation of the spec algorithms.
 - **Trade-off.** webonyx is the de-facto, battle-tested engine with the most
-  complete spec coverage. This engine implements the comprehensive validation
-  rule set and a smaller (built-in) directive set.
+  exhaustive spec-edge coverage. This engine implements the comprehensive validation
+  rule set, a broad built-in directive catalogue and a benchmark harness, but has far
+  less production mileage.
 
 ## When to choose which
 
