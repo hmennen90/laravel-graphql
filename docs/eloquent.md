@@ -69,5 +69,17 @@ with `key:`).
 'pagination' => ['default_count' => 15, 'max_count' => 100],
 ```
 
-> Roadmap: nested mutations, declarative `@rules`/`@validator`, `@guard`, Laravel Scout
-> (`@search`) and Apollo Federation are planned.
+## Search, auth & utilities
+
+- `@search(by:)` — full-text search via Laravel Scout (requires `laravel/scout`).
+- `@guard` — require an authenticated user; `@inject(context:, name:)` — inject a
+  context value (e.g. the user id) into an argument.
+- `@field(resolver:)` — bind a custom resolver class; `@rename(attribute:)` — read a
+  differently-named source attribute.
+
+The `graphql:print` Artisan command prints the built schema as SDL
+(`Hmennen90\GraphQL\Engine\Schema\SchemaPrinter`).
+
+> Roadmap: declarative `@rules`/`@validator`, argument sanitisers
+> (`@trim`/`@hash`/`@globalId`), attribute equivalents (`#[All]`…) and full Apollo
+> Federation (entity resolution) are planned.
