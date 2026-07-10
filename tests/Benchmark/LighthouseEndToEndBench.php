@@ -45,8 +45,23 @@ final class LighthouseEndToEndBench extends TestCase
     protected function getPackageProviders($app): array
     {
         $providers = [GraphQLServiceProvider::class];
-        if (class_exists(LighthouseServiceProvider::class)) {
-            $providers[] = LighthouseServiceProvider::class;
+        if (! class_exists(LighthouseServiceProvider::class)) {
+            return $providers;
+        }
+
+        // Testbench does not run package discovery, so register Lighthouse's feature
+        // providers (pagination, etc.) explicitly — otherwise @paginate is unknown.
+        $providers[] = LighthouseServiceProvider::class;
+        foreach ([
+            \Nuwave\Lighthouse\Pagination\PaginationServiceProvider::class,
+            \Nuwave\Lighthouse\OrderBy\OrderByServiceProvider::class,
+            \Nuwave\Lighthouse\SoftDeletes\SoftDeletesServiceProvider::class,
+            \Nuwave\Lighthouse\Validation\ValidationServiceProvider::class,
+            \Nuwave\Lighthouse\GlobalId\GlobalIdServiceProvider::class,
+        ] as $feature) {
+            if (class_exists($feature)) {
+                $providers[] = $feature;
+            }
         }
 
         return $providers;
@@ -62,6 +77,7 @@ final class LighthouseEndToEndBench extends TestCase
             'type Query {'
             .'  users: [User!]! @all'
             .'  filtered(name: String @eq): [User!]! @all'
+            .'  paginated(name: String @eq): [User!]! @paginate'
             .'} type User { id: ID! name: String email: String }');
 
         $app['config']->set('database.default', 'testing');
@@ -130,6 +146,7 @@ final class LighthouseEndToEndBench extends TestCase
         $scenarios = [
             '@all (200 rows)' => '{ users { id name email } }',
             '@all + @eq (1 match)' => '{ filtered(name: "User 5") { id name } }',
+            '@paginate + @eq' => '{ paginated(name: "User 5", first: 15) { data { id name } paginatorInfo { total } } }',
         ];
 
         $lines = [sprintf('  %-24s %12s %12s %10s', 'scenario', 'ours', 'lighthouse', 'ratio')];

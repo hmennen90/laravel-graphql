@@ -78,9 +78,9 @@ mature than long-standing projects.
   same implementation.
 - **Performance.** Against `webonyx/graphql-php` (Lighthouse's engine) this engine is
   faster across the board — many times faster on parse/validate/small executions and
-  ~1.8–2× faster on large lists after the executor rewrite. End-to-end (Laravel +
-  Eloquent + `@all`, 200 rows) it resolves ~1.5× faster than Lighthouse. See
-  [Benchmarks](benchmarks.md).
+  ~1.8–2× faster on large lists after the executor rewrite. End-to-end vs Lighthouse
+  (Laravel + Eloquent, 200 rows) it resolves ~1.5× faster for `@all` and ~3.7× faster
+  for `@all+@eq` and `@paginate+@eq`. See [Benchmarks](benchmarks.md).
 - **Trade-off.** The directive catalogues are now comparable — read, relations,
   filter/sort, nested mutations, Scout, validation/sanitiser directives and Apollo
   Federation are all covered here. Lighthouse still leads on maturity, subscription
