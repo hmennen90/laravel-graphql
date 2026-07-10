@@ -13,12 +13,23 @@ final class InputObjectField
         private readonly bool $hasDefaultValue = false,
         private readonly mixed $defaultValue = null,
         private readonly ?string $description = null,
+        private readonly ?string $deprecationReason = null,
     ) {
     }
 
     public static function make(string $name, Type&InputType $type, ?string $description = null): self
     {
         return new self($name, $type, false, null, $description);
+    }
+
+    public function deprecationReason(): ?string
+    {
+        return $this->deprecationReason;
+    }
+
+    public function isDeprecated(): bool
+    {
+        return $this->deprecationReason !== null;
     }
 
     public function getName(): string

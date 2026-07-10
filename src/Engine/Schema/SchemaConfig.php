@@ -24,6 +24,7 @@ final class SchemaConfig
         public readonly array $types = [],
         public readonly array $directives = [],
         public readonly array $directiveMiddleware = [],
+        public readonly ?string $description = null,
     ) {
     }
 }

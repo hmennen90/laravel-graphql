@@ -47,6 +47,11 @@ final class Schema
         $this->directives = $keyed;
     }
 
+    public function description(): ?string
+    {
+        return $this->config->description;
+    }
+
     public function getQueryType(): ?ObjectType
     {
         return $this->config->query;

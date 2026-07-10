@@ -13,12 +13,17 @@ final class Argument
         private readonly bool $hasDefaultValue = false,
         private readonly mixed $defaultValue = null,
         private readonly ?string $description = null,
+        private readonly ?string $deprecationReason = null,
     ) {
     }
 
-    public static function make(string $name, Type&InputType $type, ?string $description = null): self
-    {
-        return new self($name, $type, false, null, $description);
+    public static function make(
+        string $name,
+        Type&InputType $type,
+        ?string $description = null,
+        ?string $deprecationReason = null,
+    ): self {
+        return new self($name, $type, false, null, $description, $deprecationReason);
     }
 
     public static function withDefault(
@@ -26,8 +31,9 @@ final class Argument
         Type&InputType $type,
         mixed $defaultValue,
         ?string $description = null,
+        ?string $deprecationReason = null,
     ): self {
-        return new self($name, $type, true, $defaultValue, $description);
+        return new self($name, $type, true, $defaultValue, $description, $deprecationReason);
     }
 
     public function getName(): string
@@ -53,5 +59,15 @@ final class Argument
     public function description(): ?string
     {
         return $this->description;
+    }
+
+    public function deprecationReason(): ?string
+    {
+        return $this->deprecationReason;
+    }
+
+    public function isDeprecated(): bool
+    {
+        return $this->deprecationReason !== null;
     }
 }

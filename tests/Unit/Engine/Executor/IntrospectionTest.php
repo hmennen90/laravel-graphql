@@ -65,4 +65,42 @@ final class IntrospectionTest extends TestCase
         $this->assertSame('NON_NULL', $idField['type']['kind']);
         $this->assertSame('ID', $idField['type']['ofType']['name']);
     }
+
+    public function test_specified_by_url_and_one_of_in_introspection(): void
+    {
+        $schema = SchemaBuilder::fromSdl(<<<'GRAPHQL'
+            "The API."
+            schema { query: Query }
+            type Query { search(f: Filter): DateTime }
+            scalar DateTime @specifiedBy(url: "https://example.com/dt")
+            input Filter @oneOf { byId: ID byName: String }
+            GRAPHQL);
+
+        $result = Executor::execute($schema, Parser::parse(
+            '{ dt: __type(name: "DateTime") { specifiedByURL } filter: __type(name: "Filter") { isOneOf } }',
+        ))->toArray();
+
+        $this->assertSame('https://example.com/dt', $result['data']['dt']['specifiedByURL']);
+        $this->assertTrue($result['data']['filter']['isOneOf']);
+    }
+
+    public function test_deprecated_argument_in_introspection(): void
+    {
+        $schema = SchemaBuilder::fromSdl(<<<'GRAPHQL'
+            type Query { echo(msg: String, old: String @deprecated(reason: "use msg")): String }
+            GRAPHQL);
+
+        $withDeprecated = Executor::execute($schema, Parser::parse(
+            '{ __type(name: "Query") { fields { args(includeDeprecated: true) { name isDeprecated } } } }',
+        ))->toArray();
+        $withoutDeprecated = Executor::execute($schema, Parser::parse(
+            '{ __type(name: "Query") { fields { args { name } } } }',
+        ))->toArray();
+
+        $argNames = array_column($withDeprecated['data']['__type']['fields'][0]['args'], 'name');
+        $this->assertContains('old', $argNames);
+
+        $activeNames = array_column($withoutDeprecated['data']['__type']['fields'][0]['args'], 'name');
+        $this->assertNotContains('old', $activeNames);
+    }
 }

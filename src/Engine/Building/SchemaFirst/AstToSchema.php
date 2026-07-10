@@ -112,6 +112,7 @@ final class AstToSchema
             mutation: $this->rootType(OperationType::MUTATION, 'Mutation'),
             subscription: $this->rootType(OperationType::SUBSCRIPTION, 'Subscription'),
             types: array_values($this->types),
+            description: $this->schemaDefinition?->description,
         ));
     }
 
@@ -233,9 +234,10 @@ final class AstToSchema
                 $fields = [];
                 foreach ($node->fields as $field) {
                     $type = $this->buildInputType($field->type);
+                    $deprecation = $this->deprecationOf($field->directives);
                     $fields[] = $field->defaultValue !== null
-                        ? new InputObjectField($field->name, $type, true, $this->literalToPhp($field->defaultValue), $field->description)
-                        : new InputObjectField($field->name, $type, false, null, $field->description);
+                        ? new InputObjectField($field->name, $type, true, $this->literalToPhp($field->defaultValue), $field->description, $deprecation)
+                        : new InputObjectField($field->name, $type, false, null, $field->description, $deprecation);
                 }
 
                 return $fields;
@@ -243,6 +245,18 @@ final class AstToSchema
             $node->description,
             $this->hasDirective($node->directives, 'oneOf'),
         );
+    }
+
+    /**
+     * @param  array<int, \Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode>  $directives
+     */
+    private function deprecationOf(array $directives): ?string
+    {
+        if (! $this->hasDirective($directives, 'deprecated')) {
+            return null;
+        }
+
+        return $this->directiveArg($directives, 'deprecated', 'reason') ?? 'No longer supported';
     }
 
     /**
@@ -289,9 +303,10 @@ final class AstToSchema
             $args = [];
             foreach ($fieldNode->arguments as $argNode) {
                 $argType = $this->buildInputType($argNode->type);
+                $deprecation = $this->deprecationOf($argNode->directives);
                 $args[] = $argNode->defaultValue !== null
-                    ? Argument::withDefault($argNode->name, $argType, $this->literalToPhp($argNode->defaultValue), $argNode->description)
-                    : Argument::make($argNode->name, $argType, $argNode->description);
+                    ? Argument::withDefault($argNode->name, $argType, $this->literalToPhp($argNode->defaultValue), $argNode->description, $deprecation)
+                    : Argument::make($argNode->name, $argType, $argNode->description, $deprecation);
             }
 
             $field = FieldDefinition::make(

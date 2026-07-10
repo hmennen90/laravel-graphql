@@ -7,6 +7,7 @@ namespace Hmennen90\GraphQL\Engine\Type\Introspection;
 use Hmennen90\GraphQL\Engine\Executor\ResolveInfo;
 use Hmennen90\GraphQL\Engine\Schema\Schema;
 use Hmennen90\GraphQL\Engine\Type\Definition\Argument;
+use Hmennen90\GraphQL\Engine\Type\Definition\CustomScalarType;
 use Hmennen90\GraphQL\Engine\Type\Definition\Directive;
 use Hmennen90\GraphQL\Engine\Type\Definition\EnumType;
 use Hmennen90\GraphQL\Engine\Type\Definition\EnumValueDefinition;
@@ -72,7 +73,7 @@ final class Introspection
     {
         return self::$schemaType ??= new ObjectType('__Schema', static fn (): array => [
             FieldDefinition::make('description', Type::string(),
-                resolve: static fn (mixed $s): ?string => $s instanceof Schema ? null : null),
+                resolve: static fn (mixed $s): ?string => $s instanceof Schema ? $s->description() : null),
             FieldDefinition::make('types', Type::nonNull(Type::listOf(Type::nonNull(self::typeType()))),
                 resolve: static fn (mixed $s): array => $s instanceof Schema ? array_values($s->getTypeMap()) : []),
             FieldDefinition::make('queryType', Type::nonNull(self::typeType()),
@@ -109,6 +110,10 @@ final class Introspection
                 resolve: static fn (mixed $s): ?array => $s instanceof InputObjectType ? array_values($s->fields()) : null),
             FieldDefinition::make('ofType', self::typeType(),
                 resolve: static fn (mixed $s): ?Type => $s instanceof NonNull || $s instanceof ListOfType ? $s->wrappedType() : null),
+            FieldDefinition::make('specifiedByURL', Type::string(),
+                resolve: static fn (mixed $s): ?string => $s instanceof CustomScalarType ? $s->specifiedByUrl() : null),
+            FieldDefinition::make('isOneOf', Type::boolean(),
+                resolve: static fn (mixed $s): ?bool => $s instanceof InputObjectType ? $s->isOneOf() : null),
         ]);
     }
 
@@ -120,7 +125,8 @@ final class Introspection
             FieldDefinition::make('description', Type::string(),
                 resolve: static fn (mixed $s): ?string => $s instanceof FieldDefinition ? $s->description() : null),
             FieldDefinition::make('args', Type::nonNull(Type::listOf(Type::nonNull(self::inputValueType()))),
-                resolve: static fn (mixed $s): array => $s instanceof FieldDefinition ? array_values($s->args()) : []),
+                args: [Argument::withDefault('includeDeprecated', Type::boolean(), false)],
+                resolve: static fn (mixed $s, array $args): array => $s instanceof FieldDefinition ? self::filterArgs($s->args(), (bool) ($args['includeDeprecated'] ?? false)) : []),
             FieldDefinition::make('type', Type::nonNull(self::typeType()),
                 resolve: static fn (mixed $s): ?Type => $s instanceof FieldDefinition ? $s->getType() : null),
             FieldDefinition::make('isDeprecated', Type::nonNull(Type::boolean()),
@@ -141,6 +147,10 @@ final class Introspection
                 resolve: static fn (mixed $s): ?Type => self::inputType($s)),
             FieldDefinition::make('defaultValue', Type::string(),
                 resolve: static fn (mixed $s): ?string => self::inputDefault($s)),
+            FieldDefinition::make('isDeprecated', Type::nonNull(Type::boolean()),
+                resolve: static fn (mixed $s): bool => ($s instanceof Argument || $s instanceof InputObjectField) && $s->isDeprecated()),
+            FieldDefinition::make('deprecationReason', Type::string(),
+                resolve: static fn (mixed $s): ?string => ($s instanceof Argument || $s instanceof InputObjectField) ? $s->deprecationReason() : null),
         ]);
     }
 
@@ -168,7 +178,8 @@ final class Introspection
             FieldDefinition::make('locations', Type::nonNull(Type::listOf(Type::nonNull(Type::string()))),
                 resolve: static fn (mixed $s): array => $s instanceof Directive ? $s->locations() : []),
             FieldDefinition::make('args', Type::nonNull(Type::listOf(Type::nonNull(self::inputValueType()))),
-                resolve: static fn (mixed $s): array => $s instanceof Directive ? array_values($s->args()) : []),
+                args: [Argument::withDefault('includeDeprecated', Type::boolean(), false)],
+                resolve: static fn (mixed $s, array $args): array => $s instanceof Directive ? self::filterArgs($s->args(), (bool) ($args['includeDeprecated'] ?? false)) : []),
             FieldDefinition::make('isRepeatable', Type::nonNull(Type::boolean()),
                 resolve: static fn (mixed $s): bool => $s instanceof Directive && $s->isRepeatable()),
         ]);
@@ -215,6 +226,23 @@ final class Introspection
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<string, Argument>  $args
+     * @return array<int, Argument>
+     */
+    private static function filterArgs(array $args, bool $includeDeprecated): array
+    {
+        $result = [];
+        foreach ($args as $arg) {
+            if (! $includeDeprecated && $arg->isDeprecated()) {
+                continue;
+            }
+            $result[] = $arg;
+        }
+
+        return $result;
     }
 
     /**
