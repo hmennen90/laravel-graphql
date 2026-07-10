@@ -6,8 +6,12 @@ namespace Hmennen90\GraphQL\Engine\Validation;
 
 use Hmennen90\GraphQL\Engine\Error\CoercionError;
 use Hmennen90\GraphQL\Engine\Error\GraphQLError;
+use Hmennen90\GraphQL\Engine\Language\AST\BooleanValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\DocumentNode;
+use Hmennen90\GraphQL\Engine\Language\AST\EnumValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\FieldNode;
+use Hmennen90\GraphQL\Engine\Language\AST\FloatValueNode;
+use Hmennen90\GraphQL\Engine\Language\AST\IntValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\FragmentDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\FragmentSpreadNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InlineFragmentNode;
@@ -21,6 +25,7 @@ use Hmennen90\GraphQL\Engine\Language\AST\ObjectValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\OperationDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\OperationType;
 use Hmennen90\GraphQL\Engine\Language\AST\SelectionSetNode;
+use Hmennen90\GraphQL\Engine\Language\AST\StringValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\TypeNode;
 use Hmennen90\GraphQL\Engine\Language\AST\ValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\VariableNode;
@@ -127,6 +132,8 @@ final class DocumentValidator
      */
     private function checkSelectionSet(CompositeType $parentType, SelectionSetNode $selectionSet, array $visitedFragments): void
     {
+        $this->checkFieldMerging($parentType, $selectionSet);
+
         foreach ($selectionSet->selections as $selection) {
             if ($selection instanceof FieldNode) {
                 $this->checkField($parentType, $selection, $visitedFragments);
@@ -339,6 +346,9 @@ final class DocumentValidator
         $fields = $type->fields();
         $present = [];
         foreach ($node->fields as $objectField) {
+            if (isset($present[$objectField->name])) {
+                $this->error(sprintf('There can be only one input field named "%s".', $objectField->name), $objectField);
+            }
             $present[$objectField->name] = true;
             if (! isset($fields[$objectField->name])) {
                 $this->error(sprintf(
@@ -830,6 +840,118 @@ final class DocumentValidator
     private function typeName(Type $type): ?string
     {
         return $type instanceof NamedType ? $type->name() : null;
+    }
+
+    private function checkFieldMerging(CompositeType $parentType, SelectionSetNode $set): void
+    {
+        /** @var array<string, array<int, FieldNode>> $groups */
+        $groups = [];
+        $this->collectApplicableFields($parentType, $set, $groups, []);
+
+        foreach ($groups as $responseKey => $nodes) {
+            if (count($nodes) < 2) {
+                continue;
+            }
+            $first = $nodes[0];
+            foreach (array_slice($nodes, 1) as $other) {
+                if ($first->name !== $other->name) {
+                    $this->error(sprintf(
+                        'Fields "%s" conflict because "%s" and "%s" are different fields.',
+                        $responseKey,
+                        $first->name,
+                        $other->name,
+                    ), $other);
+
+                    break;
+                }
+                if ($this->printArguments($first) !== $this->printArguments($other)) {
+                    $this->error(sprintf(
+                        'Fields "%s" conflict because they have differing arguments.',
+                        $responseKey,
+                    ), $other);
+
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Collect fields that definitely coexist on $parentType (self or a supertype
+     * fragment), grouped by response key. Narrower type conditions are skipped to
+     * avoid false conflicts across mutually exclusive types.
+     *
+     * @param  array<string, array<int, FieldNode>>  $groups
+     * @param  array<string, true>  $visited
+     */
+    private function collectApplicableFields(CompositeType $parentType, SelectionSetNode $set, array &$groups, array $visited): void
+    {
+        foreach ($set->selections as $selection) {
+            if ($selection instanceof FieldNode) {
+                $groups[$selection->responseKey()][] = $selection;
+            } elseif ($selection instanceof InlineFragmentNode) {
+                if ($selection->typeCondition === null
+                    || $this->conditionCoversParent($parentType, $selection->typeCondition->name)) {
+                    $this->collectApplicableFields($parentType, $selection->selectionSet, $groups, $visited);
+                }
+            } elseif ($selection instanceof FragmentSpreadNode) {
+                $fragment = $this->fragments[$selection->name] ?? null;
+                if ($fragment === null || isset($visited[$selection->name])) {
+                    continue;
+                }
+                if ($this->conditionCoversParent($parentType, $fragment->typeCondition->name)) {
+                    $visited[$selection->name] = true;
+                    $this->collectApplicableFields($parentType, $fragment->selectionSet, $groups, $visited);
+                }
+            }
+        }
+    }
+
+    private function conditionCoversParent(CompositeType $parentType, string $conditionName): bool
+    {
+        if ($conditionName === $parentType->name()) {
+            return true;
+        }
+
+        return $parentType instanceof ObjectType && $parentType->implementsInterface($conditionName);
+    }
+
+    private function printArguments(FieldNode $field): string
+    {
+        $parts = [];
+        foreach ($field->arguments as $argument) {
+            $parts[$argument->name] = $argument->name.':'.$this->printValue($argument->value);
+        }
+        ksort($parts);
+
+        return implode(',', $parts);
+    }
+
+    private function printValue(ValueNode $value): string
+    {
+        return match (true) {
+            $value instanceof VariableNode => '$'.$value->name,
+            $value instanceof IntValueNode => 'i'.$value->value,
+            $value instanceof FloatValueNode => 'f'.$value->value,
+            $value instanceof StringValueNode => 's'.$value->value,
+            $value instanceof BooleanValueNode => $value->value ? 'true' : 'false',
+            $value instanceof EnumValueNode => 'e'.$value->value,
+            $value instanceof NullValueNode => 'null',
+            $value instanceof ListValueNode => '['.implode(',', array_map(fn (ValueNode $v): string => $this->printValue($v), $value->values)).']',
+            $value instanceof ObjectValueNode => $this->printObjectValue($value),
+            default => '?',
+        };
+    }
+
+    private function printObjectValue(ObjectValueNode $value): string
+    {
+        $parts = [];
+        foreach ($value->fields as $field) {
+            $parts[] = $field->name.':'.$this->printValue($field->value);
+        }
+        sort($parts);
+
+        return '{'.implode(',', $parts).'}';
     }
 
     private function compositeType(string $name): ?CompositeType

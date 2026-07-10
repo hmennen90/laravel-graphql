@@ -20,8 +20,10 @@ final class ValidationRulesTest extends TestCase
               echo(msg: String!): String
               node(id: ID!): Node
               pet: CatOrDog
+              search(filter: Filter!): [String!]!
             }
 
+            input Filter { term: String! limit: Int }
             interface Node { id: ID! }
             type Cat implements Node { id: ID! meow: String }
             type Dog implements Node { id: ID! bark: String }
@@ -132,6 +134,25 @@ final class ValidationRulesTest extends TestCase
         $this->assertStringContainsString('argument "if"', $this->validate(
             '{ hello @skip }',
         ));
+    }
+
+    public function test_unique_input_field_names(): void
+    {
+        $this->assertStringContainsString('one input field named "term"', $this->validate(
+            '{ search(filter: { term: "a", term: "b" }) }',
+        ));
+    }
+
+    public function test_overlapping_fields_conflict(): void
+    {
+        $this->assertStringContainsString('conflict', $this->validate(
+            '{ x: hello x: echo(msg: "a") }',
+        ));
+    }
+
+    public function test_same_field_merges_without_conflict(): void
+    {
+        $this->assertSame('', $this->validate('{ hello hello }'));
     }
 
     public function test_valid_document_passes(): void
