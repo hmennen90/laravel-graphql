@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hmennen90\GraphQL\Directives\Eloquent;
 
+use Hmennen90\GraphQL\Eloquent\NestedMutations;
 use Hmennen90\GraphQL\Engine\Building\SchemaBuildContext;
 use Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode;
 use Hmennen90\GraphQL\Engine\Type\Definition\FieldDefinition;
@@ -29,7 +30,7 @@ final readonly class UpdateDirective extends EloquentDirective
                 }
                 $data = self::stringKeys($args);
                 unset($data[$key]);
-                $model->update($data);
+                NestedMutations::save($model, $data);
 
                 return $model;
             }),
