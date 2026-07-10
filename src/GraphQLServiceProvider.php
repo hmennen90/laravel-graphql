@@ -103,6 +103,11 @@ final class GraphQLServiceProvider extends ServiceProvider
             $registry->register('orderBy', new \Hmennen90\GraphQL\Directives\Eloquent\OrderByDirective());
             $registry->register('whereConditions', new \Hmennen90\GraphQL\Directives\Eloquent\WhereConditionsDirective());
 
+            $registry->register('guard', new \Hmennen90\GraphQL\Directives\GuardDirective());
+            $registry->register('inject', new \Hmennen90\GraphQL\Directives\InjectDirective());
+            $registry->register('rename', new \Hmennen90\GraphQL\Directives\RenameDirective());
+            $registry->register('field', new \Hmennen90\GraphQL\Directives\FieldResolverDirective($app));
+
             $registry->register('create', new \Hmennen90\GraphQL\Directives\Eloquent\CreateDirective($models));
             $registry->register('update', new \Hmennen90\GraphQL\Directives\Eloquent\UpdateDirective($models));
             $registry->register('delete', new \Hmennen90\GraphQL\Directives\Eloquent\DeleteDirective($models));
