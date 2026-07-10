@@ -6,6 +6,7 @@ namespace Hmennen90\GraphQL;
 
 use Hmennen90\GraphQL\Console\CacheSchemaCommand;
 use Hmennen90\GraphQL\Console\ClearCacheCommand;
+use Hmennen90\GraphQL\Console\LintSchemaCommand;
 use Hmennen90\GraphQL\Console\MakeDirectiveCommand;
 use Hmennen90\GraphQL\Console\MakeMutationCommand;
 use Hmennen90\GraphQL\Console\MakeQueryCommand;
@@ -154,6 +155,7 @@ final class GraphQLServiceProvider extends ServiceProvider
             $this->commands([
                 PrintSchemaCommand::class,
                 ValidateSchemaCommand::class,
+                LintSchemaCommand::class,
                 CacheSchemaCommand::class,
                 ClearCacheCommand::class,
                 SubscriptionServerCommand::class,
