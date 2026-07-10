@@ -41,6 +41,15 @@ final class TestSchema implements ProvidesSchema
             }),
         ]);
 
-        return new Schema(new SchemaConfig(query: $query));
+        $post = new ObjectType('Post', [
+            FieldDefinition::make('id', Type::nonNull(Type::id())),
+            FieldDefinition::make('title', Type::string()),
+        ]);
+
+        $subscription = new ObjectType('Subscription', [
+            FieldDefinition::make('postAdded', $post, resolve: fn (mixed $root): mixed => $root),
+        ]);
+
+        return new Schema(new SchemaConfig(query: $query, subscription: $subscription));
     }
 }

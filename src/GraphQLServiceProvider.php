@@ -10,7 +10,10 @@ use Hmennen90\GraphQL\Execution\ErrorHandler;
 use Hmennen90\GraphQL\Http\Controllers\GraphiQLController;
 use Hmennen90\GraphQL\Http\Controllers\GraphQLController;
 use Hmennen90\GraphQL\Http\ResponseBuilder;
-use Hmennen90\GraphQL\Subscriptions\SubscriptionRegistry;
+use Hmennen90\GraphQL\Subscriptions\CacheSubscriptionStore;
+use Hmennen90\GraphQL\Subscriptions\SubscriptionManager;
+use Hmennen90\GraphQL\Subscriptions\SubscriptionStore;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -43,7 +46,9 @@ final class GraphQLServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ResponseBuilder::class);
-        $this->app->singleton(SubscriptionRegistry::class);
+
+        $this->app->singleton(SubscriptionStore::class, static fn (Application $app): SubscriptionStore => new CacheSubscriptionStore($app->make(CacheRepository::class)));
+        $this->app->singleton(SubscriptionManager::class);
     }
 
     public function boot(): void

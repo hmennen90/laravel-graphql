@@ -10,6 +10,9 @@ use Hmennen90\GraphQL\Engine\Building\SchemaFirst\SchemaBuilder;
 use Hmennen90\GraphQL\Engine\Error\SyntaxError;
 use Hmennen90\GraphQL\Engine\Executor\ExecutionResult;
 use Hmennen90\GraphQL\Engine\Executor\Executor;
+use Hmennen90\GraphQL\Engine\Language\AST\FieldNode;
+use Hmennen90\GraphQL\Engine\Language\AST\OperationDefinitionNode;
+use Hmennen90\GraphQL\Engine\Language\AST\OperationType;
 use Hmennen90\GraphQL\Engine\Language\Parser;
 use Hmennen90\GraphQL\Engine\Schema\Schema;
 use Hmennen90\GraphQL\Engine\Validation\DocumentValidator;
@@ -46,6 +49,7 @@ final class GraphQL
         array $variables = [],
         ?string $operationName = null,
         mixed $context = null,
+        mixed $rootValue = null,
     ): ExecutionResult {
         try {
             $document = Parser::parse($query);
@@ -58,7 +62,42 @@ final class GraphQL
             return ExecutionResult::withErrors($errors);
         }
 
-        return Executor::execute($this->schema(), $document, null, $context, $variables, $operationName);
+        return Executor::execute($this->schema(), $document, $rootValue, $context, $variables, $operationName);
+    }
+
+    /**
+     * Analyze an operation's type and root field without executing it — used to
+     * route subscription operations to the subscription manager.
+     */
+    public function analyze(string $query, ?string $operationName = null): OperationAnalysis
+    {
+        try {
+            $document = Parser::parse($query);
+        } catch (SyntaxError) {
+            return new OperationAnalysis(false, null);
+        }
+
+        foreach ($document->definitions as $definition) {
+            if (! $definition instanceof OperationDefinitionNode) {
+                continue;
+            }
+            if ($operationName !== null && $definition->name !== $operationName) {
+                continue;
+            }
+
+            $isSubscription = $definition->operation === OperationType::SUBSCRIPTION;
+            $rootField = null;
+            foreach ($definition->selectionSet->selections as $selection) {
+                if ($selection instanceof FieldNode) {
+                    $rootField = $selection->name;
+                    break;
+                }
+            }
+
+            return new OperationAnalysis($isSubscription, $rootField);
+        }
+
+        return new OperationAnalysis(false, null);
     }
 
     private function buildSchema(): Schema

@@ -8,6 +8,7 @@ use Hmennen90\GraphQL\Execution\Context;
 use Hmennen90\GraphQL\GraphQL;
 use Hmennen90\GraphQL\Http\RequestParser;
 use Hmennen90\GraphQL\Http\ResponseBuilder;
+use Hmennen90\GraphQL\Subscriptions\SubscriptionManager;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,7 @@ final class GraphQLController
         private readonly ResponseBuilder $responses,
         private readonly Gate $gate,
         private readonly Repository $config,
+        private readonly SubscriptionManager $subscriptions,
     ) {
     }
 
@@ -50,6 +52,13 @@ final class GraphQLController
                 continue;
             }
 
+            $analysis = $this->graphql->analyze($operation['query'], $operation['operationName']);
+            if ($analysis->isSubscription) {
+                $results[] = $this->subscribe($operation, $analysis->rootField);
+
+                continue;
+            }
+
             $result = $this->graphql->execute(
                 $operation['query'],
                 $operation['variables'],
@@ -60,5 +69,32 @@ final class GraphQLController
         }
 
         return new JsonResponse($parser->isBatch() ? $results : $results[0]);
+    }
+
+    /**
+     * @param  array{query: string, variables: array<string, mixed>, operationName: ?string}  $operation
+     * @return array<string, mixed>
+     */
+    private function subscribe(array $operation, ?string $rootField): array
+    {
+        if ($this->config->get('graphql.subscriptions.enabled') !== true) {
+            return ['errors' => [['message' => 'Subscriptions are not enabled.']]];
+        }
+
+        if ($rootField === null) {
+            return ['errors' => [['message' => 'Could not determine the subscription field.']]];
+        }
+
+        $subscriber = $this->subscriptions->register(
+            $rootField,
+            $operation['query'],
+            $operation['variables'],
+            $operation['operationName'],
+        );
+
+        return [
+            'data' => null,
+            'extensions' => ['subscription' => ['channel' => $subscriber->channel]],
+        ];
     }
 }
