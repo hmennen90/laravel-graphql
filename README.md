@@ -37,7 +37,7 @@ callables that read your models directly.
 ## Requirements
 
 - PHP `^8.4`
-- Laravel 11 or 12 (for the Laravel integration; the engine itself is framework-agnostic)
+- Laravel 11, 12 or 13 (for the Laravel integration; the engine itself is framework-agnostic)
 
 ## Installation
 

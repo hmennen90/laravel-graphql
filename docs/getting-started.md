@@ -3,7 +3,7 @@
 ## Requirements
 
 - PHP `^8.4`
-- Laravel 11 or 12
+- Laravel 11, 12 or 13
 
 ## Installation
 
