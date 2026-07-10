@@ -1,0 +1,73 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Hmennen90\GraphQL\Engine\Type\Definition;
+
+use Closure;
+use LogicException;
+
+/** A GraphQL input object type. */
+final class InputObjectType extends Type implements NamedType, InputType
+{
+    /** @var array<string, InputObjectField>|null */
+    private ?array $resolvedFields = null;
+
+    /** @var Closure(): array<int|string, InputObjectField>|array<int|string, InputObjectField> */
+    private Closure|array $fieldsConfig;
+
+    /**
+     * @param  Closure(): array<int|string, InputObjectField>|array<int|string, InputObjectField>  $fields
+     */
+    public function __construct(
+        private readonly string $name,
+        Closure|array $fields,
+        private readonly ?string $description = null,
+    ) {
+        $this->fieldsConfig = $fields;
+    }
+
+    public function name(): string
+    {
+        return $this->name;
+    }
+
+    public function description(): ?string
+    {
+        return $this->description;
+    }
+
+    /**
+     * @return array<string, InputObjectField>
+     */
+    public function fields(): array
+    {
+        if ($this->resolvedFields !== null) {
+            return $this->resolvedFields;
+        }
+
+        $raw = $this->fieldsConfig instanceof Closure ? ($this->fieldsConfig)() : $this->fieldsConfig;
+
+        $fields = [];
+        foreach ($raw as $field) {
+            $fields[$field->getName()] = $field;
+        }
+
+        return $this->resolvedFields = $fields;
+    }
+
+    public function getField(string $name): InputObjectField
+    {
+        $fields = $this->fields();
+        if (! isset($fields[$name])) {
+            throw new LogicException(sprintf('Unknown input field "%s" on type "%s".', $name, $this->name));
+        }
+
+        return $fields[$name];
+    }
+
+    public function toString(): string
+    {
+        return $this->name;
+    }
+}
