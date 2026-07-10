@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hmennen90\GraphQL\Engine\Error;
 
 use Exception;
+use Hmennen90\GraphQL\Engine\Language\AST\Node;
 use Hmennen90\GraphQL\Engine\Language\Source;
 use Throwable;
 
@@ -15,7 +16,7 @@ use Throwable;
 class GraphQLError extends Exception
 {
     /**
-     * @param  array<int, object>  $nodes  AST nodes associated with the error.
+     * @param  array<int, Node>  $nodes  AST nodes associated with the error.
      * @param  array<int, int>  $positions  Byte offsets into $source.
      * @param  array<int, string|int>  $path  Response path where the error occurred.
      * @param  array<string, mixed>  $extensions
@@ -49,7 +50,7 @@ class GraphQLError extends Exception
     }
 
     /**
-     * @return array<int, object>
+     * @return array<int, Node>
      */
     public function getNodes(): array
     {
@@ -72,13 +73,10 @@ class GraphQLError extends Exception
         }
 
         foreach ($this->nodes as $node) {
-            if (! isset($node->loc) || $node->loc === null) {
+            if ($node->loc === null) {
                 continue;
             }
-            $loc = $node->loc;
-            if (isset($loc->source, $loc->start)) {
-                $locations[] = $loc->source->getLocation($loc->start)->toArray();
-            }
+            $locations[] = $node->loc->source->getLocation($node->loc->start)->toArray();
         }
 
         return $locations;

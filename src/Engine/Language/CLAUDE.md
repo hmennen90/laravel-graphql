@@ -7,5 +7,7 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #17473 | 11:00 AM | 🔴 | Missing Location import added to Parser class | ~192 |
+| #17437 | 10:54 AM | 🟣 | Complete Lexer implementation with all GraphQL token types and spec-compliant behavior | ~605 |
 | #17426 | 10:51 AM | 🟣 | Source value object implemented for GraphQL document representation | ~297 |
 </claude-mem-context>
