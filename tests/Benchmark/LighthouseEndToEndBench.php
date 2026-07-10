@@ -15,12 +15,11 @@ use Nuwave\Lighthouse\LighthouseServiceProvider;
 use Nuwave\Lighthouse\Support\Contracts\CreatesContext;
 
 /**
- * End-to-end benchmark: full Laravel + Eloquent + directive resolution for BOTH
- * packages over the same sqlite table, via each package's GraphQL execution service
- * (this includes parse + validate + directive resolution + Eloquent, i.e. everything
- * an HTTP request does except the identical framework kernel/routing overhead).
+ * End-to-end benchmark of this package vs Lighthouse across the shared directive set
+ * (@all, @all+@eq, @paginate+@eq) — full Laravel + Eloquent over the same sqlite table,
+ * through each package's GraphQL execution service. Both parse the identical SDL.
  *
- * Not part of the default suite (lives outside tests/Unit and tests/Feature). Run:
+ * Not part of the default suite. Run:
  *   composer require --dev nuwave/lighthouse
  *   ./vendor/bin/phpunit tests/Benchmark/LighthouseEndToEndBench.php
  */
@@ -59,19 +58,22 @@ final class LighthouseEndToEndBench extends TestCase
         parent::defineEnvironment($app);
 
         $this->sdlFile = sys_get_temp_dir().'/bench-schema-'.uniqid().'.graphql';
-        file_put_contents($this->sdlFile, 'type Query { users: [User!]! @all } type User { id: ID! name: String email: String }');
+        file_put_contents($this->sdlFile,
+            'type Query {'
+            .'  users: [User!]! @all'
+            .'  filtered(name: String @eq): [User!]! @all'
+            .'} type User { id: ID! name: String email: String }');
 
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', ['driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '']);
 
-        // this package (override the base TestCase's default factory so sdl_path wins)
         $app['config']->set('graphql.schema.factory', null);
         $app['config']->set('graphql.schema.sdl_path', [$this->sdlFile]);
         $app['config']->set('graphql.models.namespace', __NAMESPACE__);
 
-        // Lighthouse
         $app['config']->set('lighthouse.schema_path', $this->sdlFile);
         $app['config']->set('lighthouse.namespaces.models', [__NAMESPACE__]);
+        $app['config']->set('lighthouse.schema_cache.enable', false);
     }
 
     protected function defineDatabaseMigrations(): void
@@ -87,6 +89,13 @@ final class LighthouseEndToEndBench extends TestCase
             $rows[] = ['name' => 'User '.$i, 'email' => 'u'.$i.'@example.test'];
         }
         User::insert($rows);
+    }
+
+    #[\Override]
+    protected function tearDown(): void
+    {
+        @unlink($this->sdlFile);
+        parent::tearDown();
     }
 
     /**
@@ -114,40 +123,30 @@ final class LighthouseEndToEndBench extends TestCase
             $this->markTestSkipped('Install nuwave/lighthouse to run this benchmark.');
         }
 
-        $query = '{ users { id name email } }';
-
         $ours = $this->app->make(\Hmennen90\GraphQL\GraphQL::class);
         $lighthouse = $this->app->make(LighthouseGraphQL::class);
         $context = $this->app->make(CreatesContext::class)->generate(Request::create('/graphql', 'POST'));
 
-        // Correctness: both return the same number of rows.
-        $oursResult = $ours->execute($query)->toArray();
-        $lhResult = $lighthouse->executeQueryString($query, $context);
-        $this->assertCount(self::ROWS, $oursResult['data']['users']);
-        $this->assertCount(self::ROWS, $lhResult['data']['users']);
+        $scenarios = [
+            '@all (200 rows)' => '{ users { id name email } }',
+            '@all + @eq (1 match)' => '{ filtered(name: "User 5") { id name } }',
+        ];
 
-        $oursNs = $this->median(static fn () => $ours->execute($query));
-        $lhNs = $this->median(static fn () => $lighthouse->executeQueryString($query, $context));
+        $lines = [sprintf('  %-24s %12s %12s %10s', 'scenario', 'ours', 'lighthouse', 'ratio')];
+        foreach ($scenarios as $label => $query) {
+            // Correctness: both return a data payload.
+            $this->assertArrayHasKey('data', $ours->execute($query)->toArray());
+            $this->assertArrayHasKey('data', $lighthouse->executeQueryString($query, $context));
 
-        $fmt = static fn (float $ns): string => sprintf('%.2f ms', $ns / 1_000_000);
-        $ratio = $lhNs > 0 ? $oursNs / $lhNs : 0.0;
-        $verdict = $ratio <= 1 ? sprintf('%.2fx faster', 1 / $ratio) : sprintf('%.2fx slower', $ratio);
+            $o = $this->median(static fn () => $ours->execute($query));
+            $l = $this->median(static fn () => $lighthouse->executeQueryString($query, $context));
+            $ratio = $l > 0 ? $o / $l : 0.0;
+            $verdict = $ratio <= 1 ? sprintf('%.2fx fast', 1 / $ratio) : sprintf('%.2fx slow', $ratio);
+            $lines[] = sprintf('  %-24s %9.3f ms %9.3f ms %10s', $label, $o / 1e6, $l / 1e6, $verdict);
+        }
 
-        fwrite(STDERR, sprintf(
-            "\nEnd-to-end (%d rows, `{ users { id name email } }`, sqlite):\n  laravel-graphql: %s\n  lighthouse:      %s\n  ratio: %s (ours/lighthouse)\n\n",
-            self::ROWS,
-            $fmt($oursNs),
-            $fmt($lhNs),
-            $verdict,
-        ));
+        fwrite(STDERR, "\nlaravel-graphql vs lighthouse (sqlite, full stack):\n".implode("\n", $lines)."\n\n");
 
         $this->assertTrue(true);
-    }
-
-    #[\Override]
-    protected function tearDown(): void
-    {
-        @unlink($this->sdlFile);
-        parent::tearDown();
     }
 }

@@ -119,18 +119,23 @@ composer require --dev nuwave/lighthouse
 ./vendor/bin/phpunit tests/Benchmark/LighthouseEndToEndBench.php
 ```
 
-`{ users { id name email } }`, 200 rows, sqlite (Apple Silicon, PHP 8.4):
+Same SDL parsed by both engines, 200 rows, sqlite (Apple Silicon, PHP 8.4):
 
-| | median | ratio |
-|---|---|---|
-| laravel-graphql | ~3.3 ms | **1.5× faster** |
-| nuwave/lighthouse | ~5.0 ms | — |
+| Scenario | laravel-graphql | lighthouse | verdict |
+|---|---|---|---|
+| `@all` (200 rows) | ~3.35 ms | ~5.05 ms | **1.5× faster** |
+| `@all` + `@eq` (1 match) | ~0.12 ms | ~0.42 ms | **3.6× faster** |
 
-**Honest reading:** end-to-end — full Laravel, the `@all` directive and Eloquent over
-the same sqlite table — this package resolves the query ~1.5× faster than Lighthouse.
-The shared DB/Eloquent cost is fixed for both, so the win comes from the lower engine
-overhead. Both resolve the identical query from the identical model — the difference is
-engine, not features.
+**Honest reading:** end-to-end — full Laravel, the same directives and Eloquent over the
+same sqlite table — this package resolves both the plain list and the filtered query
+faster than Lighthouse. The shared DB/Eloquent cost is fixed for both, so the win comes
+from the lower engine overhead; it widens on the filtered query, where less data is
+materialised and the engine share of the time grows. Both resolve the identical query
+from the identical model — the difference is engine, not features.
+
+> `@paginate` is compared as a this-package figure in the directive-layer section above;
+> a like-for-like Lighthouse `@paginate` comparison needs extra Lighthouse pagination
+> setup and is omitted here.
 
 > Benchmarks are a regression guard, not a marketing number. If you change the
 > executor or promise machinery, run `composer bench` before and after.
