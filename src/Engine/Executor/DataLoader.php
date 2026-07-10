@@ -50,7 +50,7 @@ final class DataLoader
      */
     public function loadMany(array $keys): array
     {
-        return array_map(fn (string|int $key): SyncPromise => $this->load($key), $keys);
+        return array_map($this->load(...), $keys);
     }
 
     private function dispatch(): void

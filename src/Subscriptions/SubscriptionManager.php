@@ -14,14 +14,14 @@ use Illuminate\Contracts\Events\Dispatcher;
  * subscriber's stored operation against the event payload and pushes the result
  * to that subscriber's channel via Laravel broadcasting.
  */
-final class SubscriptionManager
+final readonly class SubscriptionManager
 {
     public function __construct(
-        private readonly SubscriptionStore $store,
-        private readonly GraphQL $graphql,
-        private readonly ResponseBuilder $responses,
-        private readonly Dispatcher $events,
-        private readonly EventPublisher $publisher,
+        private SubscriptionStore $store,
+        private GraphQL $graphql,
+        private ResponseBuilder $responses,
+        private Dispatcher $events,
+        private EventPublisher $publisher,
     ) {
     }
 

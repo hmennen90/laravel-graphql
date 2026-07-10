@@ -56,11 +56,11 @@ use Hmennen90\GraphQL\Engine\Language\AST\VariableNode;
  * A recursive-descent parser turning a {@see Source} into a {@see DocumentNode}.
  * Handles both executable operations and SDL (type-system) definitions.
  */
-final class Parser
+final readonly class Parser
 {
-    private readonly Lexer $lexer;
+    private Lexer $lexer;
 
-    private function __construct(private readonly Source $source)
+    private function __construct(private Source $source)
     {
         $this->lexer = new Lexer($source);
     }
@@ -69,7 +69,7 @@ final class Parser
     {
         $source = $source instanceof Source ? $source : new Source($source);
 
-        return (new self($source))->parseDocument();
+        return new self($source)->parseDocument();
     }
 
     private function parseDocument(): DocumentNode

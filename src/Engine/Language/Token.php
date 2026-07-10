@@ -7,15 +7,15 @@ namespace Hmennen90\GraphQL\Engine\Language;
 /**
  * A single lexical token with its source span and (for value-bearing kinds) its value.
  */
-final class Token
+final readonly class Token implements \Stringable
 {
     public function __construct(
-        public readonly TokenKind $kind,
-        public readonly int $start,
-        public readonly int $end,
-        public readonly int $line,
-        public readonly int $column,
-        public readonly ?string $value = null,
+        public TokenKind $kind,
+        public int $start,
+        public int $end,
+        public int $line,
+        public int $column,
+        public ?string $value = null,
     ) {
     }
 

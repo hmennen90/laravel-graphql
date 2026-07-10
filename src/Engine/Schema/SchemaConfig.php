@@ -10,7 +10,7 @@ use Hmennen90\GraphQL\Engine\Type\Definition\ObjectType;
 use Hmennen90\GraphQL\Engine\Type\Definition\Type;
 
 /** Immutable configuration used to build a {@see Schema}. */
-final class SchemaConfig
+final readonly class SchemaConfig
 {
     /**
      * @param  array<int, Type&NamedType>  $types  Additional types not reachable from the roots.
@@ -18,13 +18,13 @@ final class SchemaConfig
      * @param  array<string, \Hmennen90\GraphQL\Engine\Executor\DirectiveMiddleware>  $directiveMiddleware  Runtime handlers keyed by directive name.
      */
     public function __construct(
-        public readonly ?ObjectType $query = null,
-        public readonly ?ObjectType $mutation = null,
-        public readonly ?ObjectType $subscription = null,
-        public readonly array $types = [],
-        public readonly array $directives = [],
-        public readonly array $directiveMiddleware = [],
-        public readonly ?string $description = null,
+        public ?ObjectType $query = null,
+        public ?ObjectType $mutation = null,
+        public ?ObjectType $subscription = null,
+        public array $types = [],
+        public array $directives = [],
+        public array $directiveMiddleware = [],
+        public ?string $description = null,
     ) {
     }
 }

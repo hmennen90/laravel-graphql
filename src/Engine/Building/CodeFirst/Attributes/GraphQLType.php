@@ -8,11 +8,11 @@ use Attribute;
 
 /** Marks a PHP class as a GraphQL object type for the attribute builder. */
 #[Attribute(Attribute::TARGET_CLASS)]
-final class GraphQLType
+final readonly class GraphQLType
 {
     public function __construct(
-        public readonly ?string $name = null,
-        public readonly ?string $description = null,
+        public ?string $name = null,
+        public ?string $description = null,
     ) {
     }
 }

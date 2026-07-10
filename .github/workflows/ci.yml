@@ -62,3 +62,6 @@ jobs:
 
       - name: Run PHPStan
         run: composer analyse
+
+      - name: Run Rector (dry-run)
+        run: composer rector:dry

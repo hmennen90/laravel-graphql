@@ -864,13 +864,7 @@ final class DocumentValidator
     private function doTypesOverlap(CompositeType $a, CompositeType $b): bool
     {
         $bNames = $this->possibleObjectNames($b);
-        foreach ($this->possibleObjectNames($a) as $name) {
-            if (in_array($name, $bNames, true)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->possibleObjectNames($a), fn($name) => in_array($name, $bNames, true));
     }
 
     /**
@@ -1022,7 +1016,7 @@ final class DocumentValidator
             $value instanceof BooleanValueNode => $value->value ? 'true' : 'false',
             $value instanceof EnumValueNode => 'e'.$value->value,
             $value instanceof NullValueNode => 'null',
-            $value instanceof ListValueNode => '['.implode(',', array_map(fn (ValueNode $v): string => $this->printValue($v), $value->values)).']',
+            $value instanceof ListValueNode => '['.implode(',', array_map($this->printValue(...), $value->values)).']',
             $value instanceof ObjectValueNode => $this->printObjectValue($value),
             default => '?',
         };

@@ -14,17 +14,17 @@ use Hmennen90\GraphQL\Engine\Error\GraphQLError;
  * (use {@see ExecutionResult::withErrors()}); a "field error" produces partial data
  * alongside errors.
  */
-final class ExecutionResult
+final readonly class ExecutionResult
 {
     /**
      * @param  array<int, GraphQLError>  $errors
      * @param  array<string, mixed>  $extensions
      */
     public function __construct(
-        public readonly mixed $data = null,
-        public readonly array $errors = [],
-        public readonly array $extensions = [],
-        private readonly bool $hasData = true,
+        public mixed $data = null,
+        public array $errors = [],
+        public array $extensions = [],
+        private bool $hasData = true,
     ) {
     }
 
@@ -37,7 +37,7 @@ final class ExecutionResult
      */
     public static function withErrors(array $errors, array $extensions = []): self
     {
-        return new self(data: null, errors: $errors, extensions: $extensions, hasData: false);
+        return new self(errors: $errors, extensions: $extensions, hasData: false);
     }
 
     /**

@@ -14,24 +14,20 @@ final class ObjectType extends Type implements NamedType, OutputType, CompositeT
     /** @var array<int, InterfaceType>|null */
     private ?array $resolvedInterfaces = null;
 
-    /** @var Closure(): array<int, InterfaceType>|array<int, InterfaceType> */
-    private Closure|array $interfacesConfig;
-
     private readonly ?Closure $isTypeOf;
 
     /**
      * @param  Closure(): array<int|string, FieldDefinition>|array<int|string, FieldDefinition>  $fields
-     * @param  Closure(): array<int, InterfaceType>|array<int, InterfaceType>  $interfaces
+     * @param Closure():array<int, InterfaceType>|array<int, InterfaceType> $interfacesConfig
      */
     public function __construct(
         private readonly string $name,
         Closure|array $fields,
-        Closure|array $interfaces = [],
+        private Closure|array $interfacesConfig = [],
         private readonly ?string $description = null,
         ?callable $isTypeOf = null,
     ) {
         $this->fieldsConfig = $fields;
-        $this->interfacesConfig = $interfaces;
         $this->isTypeOf = $isTypeOf !== null ? Closure::fromCallable($isTypeOf) : null;
     }
 
@@ -61,13 +57,7 @@ final class ObjectType extends Type implements NamedType, OutputType, CompositeT
 
     public function implementsInterface(string $name): bool
     {
-        foreach ($this->interfaces() as $interface) {
-            if ($interface->name() === $name) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->interfaces(), fn($interface) => $interface->name() === $name);
     }
 
     public function isTypeOf(mixed $value, mixed $context): ?bool

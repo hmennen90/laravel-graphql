@@ -12,7 +12,7 @@ use Hmennen90\GraphQL\Engine\Type\Definition\OutputType;
 use Hmennen90\GraphQL\Engine\Type\Definition\Type;
 
 /** Context passed to every field resolver. */
-final class ResolveInfo
+final readonly class ResolveInfo
 {
     /**
      * @param  array<int, FieldNode>  $fieldNodes
@@ -20,15 +20,15 @@ final class ResolveInfo
      * @param  array<string, mixed>  $variableValues
      */
     public function __construct(
-        public readonly string $fieldName,
-        public readonly array $fieldNodes,
-        public readonly Type&OutputType $returnType,
-        public readonly CompositeType $parentType,
-        public readonly array $path,
-        public readonly Schema $schema,
-        public readonly array $variableValues,
-        public readonly OperationDefinitionNode $operation,
-        public readonly mixed $rootValue,
+        public string $fieldName,
+        public array $fieldNodes,
+        public Type&OutputType $returnType,
+        public CompositeType $parentType,
+        public array $path,
+        public Schema $schema,
+        public array $variableValues,
+        public OperationDefinitionNode $operation,
+        public mixed $rootValue,
     ) {
     }
 }

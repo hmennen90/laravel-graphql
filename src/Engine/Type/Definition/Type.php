@@ -14,7 +14,7 @@ use Hmennen90\GraphQL\Engine\Type\Scalars\StringType;
  * Base class for every type in the system. Also the entry point for the
  * built-in scalars and the list/non-null wrapping constructors.
  */
-abstract class Type
+abstract class Type implements \Stringable
 {
     private static ?IntType $int = null;
 

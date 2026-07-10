@@ -264,13 +264,7 @@ final class AstToSchema
      */
     private function hasDirective(array $directives, string $name): bool
     {
-        foreach ($directives as $directive) {
-            if ($directive->name === $name) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($directives, fn($directive) => $directive->name === $name);
     }
 
     /**
@@ -420,7 +414,7 @@ final class AstToSchema
     private function literalToPhp(ValueNode $node): mixed
     {
         if ($node instanceof ListValueNode) {
-            return array_map(fn (ValueNode $v): mixed => $this->literalToPhp($v), $node->values);
+            return array_map($this->literalToPhp(...), $node->values);
         }
 
         if ($node instanceof ObjectValueNode) {

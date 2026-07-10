@@ -192,13 +192,13 @@ final class Lexer
                 throw SyntaxError::at($this->source, $this->position, 'Invalid number, unexpected digit after 0.');
             }
         } else {
-            $this->readDigits($start);
+            $this->readDigits();
         }
 
         if ($this->peek() === '.') {
             $isFloat = true;
             $this->position++;
-            $this->readDigits($start);
+            $this->readDigits();
         }
 
         $peek = $this->peek();
@@ -208,7 +208,7 @@ final class Lexer
             if ($this->peek() === '+' || $this->peek() === '-') {
                 $this->position++;
             }
-            $this->readDigits($start);
+            $this->readDigits();
         }
 
         return $this->make(
@@ -219,7 +219,7 @@ final class Lexer
         );
     }
 
-    private function readDigits(int $start): void
+    private function readDigits(): void
     {
         $char = $this->peek();
         if ($char === null || ! ctype_digit($char)) {
@@ -231,7 +231,6 @@ final class Lexer
                     : sprintf('Invalid number, expected digit but got: "%s".', $char),
             );
         }
-
         while (($char = $this->peek()) !== null && ctype_digit($char)) {
             $this->position++;
         }

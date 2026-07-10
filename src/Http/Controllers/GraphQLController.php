@@ -18,16 +18,16 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /** The HTTP entry point: accepts single or batched operations and returns JSON. */
-final class GraphQLController
+final readonly class GraphQLController
 {
     public function __construct(
-        private readonly GraphQL $graphql,
-        private readonly ResponseBuilder $responses,
-        private readonly Gate $gate,
-        private readonly Repository $config,
-        private readonly SubscriptionManager $subscriptions,
-        private readonly PersistedQueryResolver $persistedQueries,
-        private readonly CacheControlAnalyzer $cacheControl,
+        private GraphQL $graphql,
+        private ResponseBuilder $responses,
+        private Gate $gate,
+        private Repository $config,
+        private SubscriptionManager $subscriptions,
+        private PersistedQueryResolver $persistedQueries,
+        private CacheControlAnalyzer $cacheControl,
     ) {
     }
 

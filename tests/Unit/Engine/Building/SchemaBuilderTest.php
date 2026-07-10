@@ -50,7 +50,7 @@ final class SchemaBuilderTest extends TestCase
             'Query' => ['hello' => fn (): string => 'world', 'add' => fn (): int => 0],
         ]);
 
-        $codeSchema = new Schema((new CodeFirstBuilder())
+        $codeSchema = new Schema(new CodeFirstBuilder()
             ->query(new ObjectType('Query', [
                 FieldDefinition::make('hello', Type::nonNull(Type::string())),
                 FieldDefinition::make('add', Type::nonNull(Type::int()), args: [

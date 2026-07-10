@@ -7,15 +7,15 @@ namespace Hmennen90\GraphQL\Engine\Building\SchemaFirst;
 /**
  * Maps SDL type/field names to resolver callables and abstract-type resolvers.
  */
-final class ResolverMap
+final readonly class ResolverMap
 {
     /**
      * @param  array<string, array<string, callable>>  $fieldResolvers
      * @param  array<string, callable>  $typeResolvers
      */
     public function __construct(
-        private readonly array $fieldResolvers = [],
-        private readonly array $typeResolvers = [],
+        private array $fieldResolvers = [],
+        private array $typeResolvers = [],
     ) {
     }
 

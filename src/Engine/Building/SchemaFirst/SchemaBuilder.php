@@ -24,6 +24,6 @@ final class SchemaBuilder
     ): Schema {
         $document = Parser::parse($sdl);
 
-        return (new AstToSchema($document, new ResolverMap($resolvers, $typeResolvers), $schemaDirectives))->build();
+        return new AstToSchema($document, new ResolverMap($resolvers, $typeResolvers), $schemaDirectives)->build();
     }
 }

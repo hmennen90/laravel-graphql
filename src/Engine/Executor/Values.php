@@ -242,9 +242,7 @@ final class Values
         }
 
         if ($node instanceof NamedTypeNode) {
-            $type = $schema->getType($node->name);
-
-            return $type;
+            return $schema->getType($node->name);
         }
 
         return null;

@@ -12,21 +12,17 @@ final class UnionType extends Type implements NamedType, OutputType, CompositeTy
     /** @var array<int, ObjectType>|null */
     private ?array $resolvedTypes = null;
 
-    /** @var Closure(): array<int, ObjectType>|array<int, ObjectType> */
-    private Closure|array $typesConfig;
-
     private readonly ?Closure $resolveType;
 
     /**
-     * @param  Closure(): array<int, ObjectType>|array<int, ObjectType>  $types
+     * @param Closure():array<int, ObjectType>|array<int, ObjectType> $typesConfig
      */
     public function __construct(
         private readonly string $name,
-        Closure|array $types,
+        private readonly Closure|array $typesConfig,
         private readonly ?string $description = null,
         ?callable $resolveType = null,
     ) {
-        $this->typesConfig = $types;
         $this->resolveType = $resolveType !== null ? Closure::fromCallable($resolveType) : null;
     }
 
@@ -56,13 +52,7 @@ final class UnionType extends Type implements NamedType, OutputType, CompositeTy
 
     public function hasType(string $name): bool
     {
-        foreach ($this->types() as $type) {
-            if ($type->name() === $name) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->types(), fn($type) => $type->name() === $name);
     }
 
     public function resolveType(mixed $value, mixed $context): ObjectType|string|null

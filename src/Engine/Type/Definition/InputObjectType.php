@@ -13,19 +13,11 @@ final class InputObjectType extends Type implements NamedType, InputType
     /** @var array<string, InputObjectField>|null */
     private ?array $resolvedFields = null;
 
-    /** @var Closure(): array<int|string, InputObjectField>|array<int|string, InputObjectField> */
-    private Closure|array $fieldsConfig;
-
     /**
-     * @param  Closure(): array<int|string, InputObjectField>|array<int|string, InputObjectField>  $fields
+     * @param Closure():(array<int|string, InputObjectField>)|array<int|string, InputObjectField> $fieldsConfig
      */
-    public function __construct(
-        private readonly string $name,
-        Closure|array $fields,
-        private readonly ?string $description = null,
-        private readonly bool $isOneOf = false,
-    ) {
-        $this->fieldsConfig = $fields;
+    public function __construct(private readonly string $name, private readonly Closure|array $fieldsConfig, private readonly ?string $description = null, private readonly bool $isOneOf = false)
+    {
     }
 
     public function isOneOf(): bool

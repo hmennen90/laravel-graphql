@@ -7,25 +7,25 @@ namespace Hmennen90\GraphQL\Engine\Type\Definition;
 use Closure;
 
 /** A field on an object or interface type. */
-final class FieldDefinition
+final readonly class FieldDefinition
 {
     /** @var array<string, Argument> */
-    private readonly array $args;
+    private array $args;
 
-    private readonly ?Closure $resolve;
+    private ?Closure $resolve;
 
     /**
      * @param  array<int|string, Argument>  $args
      * @param  array<string, mixed>  $metadata  Arbitrary schema metadata (e.g. cache hints).
      */
     public function __construct(
-        private readonly string $name,
-        private readonly Type&OutputType $type,
+        private string $name,
+        private Type&OutputType $type,
         ?callable $resolve = null,
         array $args = [],
-        private readonly ?string $description = null,
-        private readonly ?string $deprecationReason = null,
-        private readonly array $metadata = [],
+        private ?string $description = null,
+        private ?string $deprecationReason = null,
+        private array $metadata = [],
     ) {
         $this->resolve = $resolve !== null ? Closure::fromCallable($resolve) : null;
 

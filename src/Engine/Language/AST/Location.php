@@ -10,14 +10,14 @@ use Hmennen90\GraphQL\Engine\Language\Token;
 /**
  * The span of source a node was parsed from.
  */
-final class Location
+final readonly class Location
 {
     public function __construct(
-        public readonly int $start,
-        public readonly int $end,
-        public readonly Source $source,
-        public readonly ?Token $startToken = null,
-        public readonly ?Token $endToken = null,
+        public int $start,
+        public int $end,
+        public Source $source,
+        public ?Token $startToken = null,
+        public ?Token $endToken = null,
     ) {
     }
 }

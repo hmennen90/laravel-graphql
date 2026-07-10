@@ -5,21 +5,21 @@ declare(strict_types=1);
 namespace Hmennen90\GraphQL\Engine\Type\Definition;
 
 /** A GraphQL directive definition. */
-final class Directive
+final readonly class Directive
 {
     /** @var array<string, Argument> */
-    private readonly array $args;
+    private array $args;
 
     /**
      * @param  array<int, string>  $locations
      * @param  array<int|string, Argument>  $args
      */
     public function __construct(
-        private readonly string $name,
-        private readonly array $locations,
+        private string $name,
+        private array $locations,
         array $args = [],
-        private readonly bool $repeatable = false,
-        private readonly ?string $description = null,
+        private bool $repeatable = false,
+        private ?string $description = null,
     ) {
         $keyed = [];
         foreach ($args as $arg) {

@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Hmennen90\GraphQL\Engine\Type\Definition;
 
 /** A single value of an {@see EnumType}. */
-final class EnumValueDefinition
+final readonly class EnumValueDefinition
 {
     public function __construct(
-        private readonly string $name,
-        private readonly mixed $value = null,
-        private readonly ?string $description = null,
-        private readonly ?string $deprecationReason = null,
+        private string $name,
+        private mixed $value = null,
+        private ?string $description = null,
+        private ?string $deprecationReason = null,
     ) {
     }
 

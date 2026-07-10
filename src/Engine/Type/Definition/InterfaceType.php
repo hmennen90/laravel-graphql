@@ -14,24 +14,20 @@ final class InterfaceType extends Type implements NamedType, OutputType, Composi
     /** @var array<int, InterfaceType>|null */
     private ?array $resolvedInterfaces = null;
 
-    /** @var Closure(): array<int, InterfaceType>|array<int, InterfaceType> */
-    private Closure|array $interfacesConfig;
-
     private readonly ?Closure $resolveType;
 
     /**
      * @param  Closure(): array<int|string, FieldDefinition>|array<int|string, FieldDefinition>  $fields
-     * @param  Closure(): array<int, InterfaceType>|array<int, InterfaceType>  $interfaces
+     * @param Closure():array<int, InterfaceType>|array<int, InterfaceType> $interfacesConfig
      */
     public function __construct(
         private readonly string $name,
         Closure|array $fields,
-        Closure|array $interfaces = [],
+        private Closure|array $interfacesConfig = [],
         private readonly ?string $description = null,
         ?callable $resolveType = null,
     ) {
         $this->fieldsConfig = $fields;
-        $this->interfacesConfig = $interfaces;
         $this->resolveType = $resolveType !== null ? Closure::fromCallable($resolveType) : null;
     }
 

@@ -8,6 +8,7 @@ use Hmennen90\GraphQL\Tests\TestCase;
 
 final class PersistedQueryTest extends TestCase
 {
+    #[\Override]
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);

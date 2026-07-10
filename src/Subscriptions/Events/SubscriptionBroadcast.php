@@ -8,14 +8,14 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 /** Carries a subscription result to a client's private channel. */
-final class SubscriptionBroadcast implements ShouldBroadcastNow
+final readonly class SubscriptionBroadcast implements ShouldBroadcastNow
 {
     /**
      * @param  array<string, mixed>  $payload
      */
     public function __construct(
-        public readonly string $channel,
-        public readonly array $payload,
+        public string $channel,
+        public array $payload,
     ) {
     }
 

@@ -7,13 +7,13 @@ namespace Hmennen90\GraphQL\Subscriptions;
 use Illuminate\Contracts\Cache\Repository;
 
 /** A subscription store backed by Laravel's cache. */
-final class CacheSubscriptionStore implements SubscriptionStore
+final readonly class CacheSubscriptionStore implements SubscriptionStore
 {
     private const string TOPIC_PREFIX = 'graphql:sub:topic:';
 
     private const string CHANNEL_PREFIX = 'graphql:sub:channel:';
 
-    public function __construct(private readonly Repository $cache)
+    public function __construct(private Repository $cache)
     {
     }
 
@@ -62,6 +62,6 @@ final class CacheSubscriptionStore implements SubscriptionStore
     {
         $channels = $this->cache->get(self::TOPIC_PREFIX.$topic, []);
 
-        return is_array($channels) ? array_values(array_filter($channels, 'is_string')) : [];
+        return is_array($channels) ? array_values(array_filter($channels, is_string(...))) : [];
     }
 }

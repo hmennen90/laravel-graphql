@@ -21,7 +21,11 @@ composer install
 ```bash
 composer test       # PHPUnit (Unit + Feature)
 composer analyse    # PHPStan level 10
+composer rector:dry # Rector (PHP 8.4 modernization) — must report no changes
 ```
+
+Run `composer rector` to auto-apply the PHP 8.4 modernizations before committing;
+CI fails if `composer rector:dry` would change anything.
 
 New code must pass **PHPStan level 10** with no ignores, casts-to-silence, or
 baseline entries. Match the surrounding code style (PSR-12, typed, `final` where

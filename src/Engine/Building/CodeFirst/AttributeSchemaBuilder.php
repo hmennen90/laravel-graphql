@@ -73,7 +73,6 @@ final class AttributeSchemaBuilder
                 $fieldName,
                 TypeExpression::parse($meta->type, fn (string $n): Type&OutputType => $this->resolveNamed($n)),
                 resolve: static function (mixed $source, array $args, mixed $context, mixed $info) use ($className, $methodName): mixed {
-                    /** @var object $instance */
                     $instance = new $className();
 
                     return $instance->{$methodName}($source, $args, $context, $info);

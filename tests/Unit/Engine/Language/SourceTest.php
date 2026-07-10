@@ -19,7 +19,7 @@ final class SourceTest extends TestCase
 
     public function test_it_defaults_the_name(): void
     {
-        $this->assertSame('GraphQL', (new Source('{}'))->name());
+        $this->assertSame('GraphQL', new Source('{}')->name());
     }
 
     public function test_it_maps_position_to_line_and_column(): void

@@ -8,12 +8,12 @@ use Attribute;
 
 /** Marks a public method as a GraphQL field; the method is its resolver. */
 #[Attribute(Attribute::TARGET_METHOD)]
-final class GraphQLField
+final readonly class GraphQLField
 {
     public function __construct(
-        public readonly string $type,
-        public readonly ?string $name = null,
-        public readonly ?string $description = null,
+        public string $type,
+        public ?string $name = null,
+        public ?string $description = null,
     ) {
     }
 }

@@ -9,11 +9,11 @@ use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Contracts\View\View;
 
 /** Serves the in-browser GraphiQL IDE. */
-final class GraphiQLController
+final readonly class GraphiQLController
 {
     public function __construct(
-        private readonly ViewFactory $views,
-        private readonly Repository $config,
+        private ViewFactory $views,
+        private Repository $config,
     ) {
     }
 

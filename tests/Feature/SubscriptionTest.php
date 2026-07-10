@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 
 final class SubscriptionTest extends TestCase
 {
+    #[\Override]
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);
@@ -47,9 +48,7 @@ final class SubscriptionTest extends TestCase
         $manager = $this->app->make(SubscriptionManager::class);
         $manager->broadcast('postAdded', ['id' => '7', 'title' => 'Hello']);
 
-        Event::assertDispatched(SubscriptionBroadcast::class, function (SubscriptionBroadcast $event): bool {
-            return $event->payload['data']['postAdded']['id'] === '7'
-                && $event->payload['data']['postAdded']['title'] === 'Hello';
-        });
+        Event::assertDispatched(SubscriptionBroadcast::class, fn(SubscriptionBroadcast $event): bool => $event->payload['data']['postAdded']['id'] === '7'
+            && $event->payload['data']['postAdded']['title'] === 'Hello');
     }
 }

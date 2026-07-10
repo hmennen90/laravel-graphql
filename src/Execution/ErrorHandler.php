@@ -15,14 +15,14 @@ use Throwable;
  * Formats engine errors into the GraphQL error shape, masking internal
  * exception messages unless debug mode is on or the exception is client-safe.
  */
-final class ErrorHandler
+final readonly class ErrorHandler
 {
     /**
      * @param  array<int, string>  $safeExceptions  Fully-qualified exception class names treated as client-safe.
      */
     public function __construct(
-        private readonly bool $debug,
-        private readonly array $safeExceptions = [],
+        private bool $debug,
+        private array $safeExceptions = [],
     ) {
     }
 
@@ -77,12 +77,6 @@ final class ErrorHandler
 
     private function isSafe(Throwable $previous): bool
     {
-        foreach ($this->safeExceptions as $safe) {
-            if ($previous instanceof $safe) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->safeExceptions, fn($safe) => $previous instanceof $safe);
     }
 }

@@ -46,7 +46,7 @@ final class AttributeSchemaBuilderTest extends TestCase
 {
     public function test_it_builds_and_executes_an_attribute_schema(): void
     {
-        $types = (new AttributeSchemaBuilder())->build([AttributeQueryType::class, AttributeGreetingType::class]);
+        $types = new AttributeSchemaBuilder()->build([AttributeQueryType::class, AttributeGreetingType::class]);
         $schema = new Schema(new SchemaConfig(query: $types['Query']));
 
         $result = Executor::execute($schema, Parser::parse('{ hello greeting { text } }'))->toArray();

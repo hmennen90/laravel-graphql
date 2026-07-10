@@ -18,14 +18,14 @@ use Hmennen90\GraphQL\Engine\Type\Definition\UnionType;
  * schema-first builders produce a {@see SchemaConfig}, which this class turns into
  * one queryable schema for the validator and executor.
  */
-final class Schema
+final readonly class Schema
 {
-    private readonly TypeRegistry $registry;
+    private TypeRegistry $registry;
 
     /** @var array<string, Directive> */
-    private readonly array $directives;
+    private array $directives;
 
-    public function __construct(private readonly SchemaConfig $config)
+    public function __construct(private SchemaConfig $config)
     {
         $registry = new TypeRegistry();
         foreach (Type::builtInScalars() as $scalar) {
@@ -107,13 +107,7 @@ final class Schema
 
     public function isPossibleType(AbstractType $abstract, ObjectType $possible): bool
     {
-        foreach ($this->getPossibleTypes($abstract) as $type) {
-            if ($type->name() === $possible->name()) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->getPossibleTypes($abstract), fn($type) => $type->name() === $possible->name());
     }
 
     /**
@@ -123,7 +117,7 @@ final class Schema
      */
     public function validate(): array
     {
-        return (new SchemaValidator())->validate($this);
+        return new SchemaValidator()->validate($this);
     }
 
     public function getDirective(string $name): ?Directive

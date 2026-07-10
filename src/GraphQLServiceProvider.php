@@ -27,6 +27,7 @@ use Illuminate\Support\ServiceProvider;
 
 final class GraphQLServiceProvider extends ServiceProvider
 {
+    #[\Override]
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/graphql.php', 'graphql');
@@ -47,7 +48,7 @@ final class GraphQLServiceProvider extends ServiceProvider
 
             return new ErrorHandler(
                 (bool) $config->get('graphql.debug', false),
-                array_values(array_filter(is_array($safe) ? $safe : [], 'is_string')),
+                array_values(array_filter(is_array($safe) ? $safe : [], is_string(...))),
             );
         });
 
@@ -71,7 +72,7 @@ final class GraphQLServiceProvider extends ServiceProvider
         $this->app->singleton(SubscriptionManager::class);
 
         if (extension_loaded('swoole') || extension_loaded('openswoole')) {
-            $this->app->bind(SubscriptionServer::class, 'Hmennen90\\GraphQL\\Subscriptions\\Swoole\\SwooleSubscriptionServer');
+            $this->app->bind(SubscriptionServer::class, \Hmennen90\GraphQL\Subscriptions\Swoole\SwooleSubscriptionServer::class);
         }
     }
 
@@ -121,6 +122,6 @@ final class GraphQLServiceProvider extends ServiceProvider
      */
     private function stringList(mixed $value): array
     {
-        return is_array($value) ? array_values(array_filter($value, 'is_string')) : [];
+        return is_array($value) ? array_values(array_filter($value, is_string(...))) : [];
     }
 }

@@ -11,13 +11,13 @@ use Illuminate\Contracts\Config\Repository as Config;
  * Resolves Automatic Persisted Queries (Apollo APQ): registers a query by its
  * sha256 hash and serves it on subsequent hash-only requests.
  */
-final class PersistedQueryResolver
+final readonly class PersistedQueryResolver
 {
     private const string PREFIX = 'graphql:pq:';
 
     public function __construct(
-        private readonly Cache $cache,
-        private readonly Config $config,
+        private Cache $cache,
+        private Config $config,
     ) {
     }
 

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Gate;
 
 final class CanDirectiveTest extends TestCase
 {
+    #[\Override]
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);

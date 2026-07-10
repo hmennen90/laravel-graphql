@@ -10,13 +10,13 @@ use Illuminate\Contracts\Redis\Factory as Redis;
  * Publishes subscription events to a Redis pub/sub channel that a graphql-ws
  * server subscribes to and fans out to connected clients.
  */
-final class RedisEventPublisher implements EventPublisher
+final readonly class RedisEventPublisher implements EventPublisher
 {
     public const string CHANNEL = 'graphql:subscriptions';
 
     public function __construct(
-        private readonly Redis $redis,
-        private readonly ?string $connection = null,
+        private Redis $redis,
+        private ?string $connection = null,
     ) {
     }
 

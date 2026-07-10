@@ -7,11 +7,11 @@ namespace Hmennen90\GraphQL\Engine\Language;
 /**
  * A GraphQL source document: the raw body plus a name used in error messages.
  */
-final class Source
+final readonly class Source
 {
     public function __construct(
-        private readonly string $body,
-        private readonly string $name = 'GraphQL',
+        private string $body,
+        private string $name = 'GraphQL',
     ) {
     }
 

@@ -9,6 +9,7 @@ use Hmennen90\GraphQL\Tests\TestCase;
 
 final class CacheControlTest extends TestCase
 {
+    #[\Override]
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);

@@ -8,9 +8,9 @@ use Hmennen90\GraphQL\Engine\Executor\ExecutionResult;
 use Hmennen90\GraphQL\Execution\ErrorHandler;
 
 /** Turns an {@see ExecutionResult} into the JSON-serializable response array. */
-final class ResponseBuilder
+final readonly class ResponseBuilder
 {
-    public function __construct(private readonly ErrorHandler $errorHandler)
+    public function __construct(private ErrorHandler $errorHandler)
     {
     }
 
@@ -23,7 +23,7 @@ final class ResponseBuilder
 
         if ($result->errors !== []) {
             $response['errors'] = array_map(
-                fn ($error): array => $this->errorHandler->format($error),
+                $this->errorHandler->format(...),
                 $result->errors,
             );
         }

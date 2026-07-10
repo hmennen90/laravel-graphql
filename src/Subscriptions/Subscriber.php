@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Hmennen90\GraphQL\Subscriptions;
 
 /** A registered subscription: the client channel plus the stored operation. */
-final class Subscriber
+final readonly class Subscriber
 {
     /**
      * @param  array<string, mixed>  $variables
      */
     public function __construct(
-        public readonly string $channel,
-        public readonly string $topic,
-        public readonly string $query,
-        public readonly array $variables,
-        public readonly ?string $operationName,
+        public string $channel,
+        public string $topic,
+        public string $query,
+        public array $variables,
+        public ?string $operationName,
     ) {
     }
 

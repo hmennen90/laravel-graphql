@@ -13,12 +13,12 @@ use Illuminate\Http\Request;
  * The per-request execution context handed to resolvers. Exposes the request,
  * the authenticated user and a Gate bridge for field-level authorization.
  */
-final class Context
+final readonly class Context
 {
     public function __construct(
-        public readonly Request $request,
-        public readonly ?Authenticatable $user,
-        private readonly Gate $gate,
+        public Request $request,
+        public ?Authenticatable $user,
+        private Gate $gate,
     ) {
     }
 

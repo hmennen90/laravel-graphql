@@ -44,7 +44,7 @@ final class GenerationTest extends TestCase
 {
     public function test_object_type_generated_from_model(): void
     {
-        $type = (new ModelTypeGenerator())->fromModel(GeneratedUser::class);
+        $type = new ModelTypeGenerator()->fromModel(GeneratedUser::class);
 
         $this->assertSame('GeneratedUser', $type->name());
         $this->assertSame('ID!', (string) $type->getField('id')->getType());
@@ -57,7 +57,7 @@ final class GenerationTest extends TestCase
 
     public function test_input_type_generated_from_form_request(): void
     {
-        $type = (new ValidationInputGenerator())->fromRequest(StoreUserRequest::class, 'StoreUserInput');
+        $type = new ValidationInputGenerator()->fromRequest(StoreUserRequest::class, 'StoreUserInput');
 
         $this->assertSame('String!', (string) $type->getField('name')->getType());
         $this->assertSame('Int', (string) $type->getField('age')->getType());
@@ -76,7 +76,7 @@ final class GenerationTest extends TestCase
             'tags' => ['a', 'b'],
         ];
 
-        $type = (new ResponseTypeGenerator())->fromArray($sample, 'UserResource');
+        $type = new ResponseTypeGenerator()->fromArray($sample, 'UserResource');
 
         $this->assertSame('Int', (string) $type->getField('id')->getType());
         $this->assertSame('String', (string) $type->getField('name')->getType());

@@ -21,6 +21,7 @@ final class SpyEventPublisher implements EventPublisher
 
 final class WsServerTest extends TestCase
 {
+    #[\Override]
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);

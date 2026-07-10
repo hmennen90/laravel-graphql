@@ -7,11 +7,11 @@ namespace Hmennen90\GraphQL\Engine\Language;
 /**
  * A 1-based line/column position within a {@see Source}.
  */
-final class SourceLocation
+final readonly class SourceLocation
 {
     public function __construct(
-        public readonly int $line,
-        public readonly int $column,
+        public int $line,
+        public int $column,
     ) {
     }
 

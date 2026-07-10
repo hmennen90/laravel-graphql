@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Hmennen90\GraphQL\Engine\Type\Definition;
 
 /** A field of an {@see InputObjectType}. */
-final class InputObjectField
+final readonly class InputObjectField
 {
     public function __construct(
-        private readonly string $name,
-        private readonly Type&InputType $type,
-        private readonly bool $hasDefaultValue = false,
-        private readonly mixed $defaultValue = null,
-        private readonly ?string $description = null,
-        private readonly ?string $deprecationReason = null,
+        private string $name,
+        private Type&InputType $type,
+        private bool $hasDefaultValue = false,
+        private mixed $defaultValue = null,
+        private ?string $description = null,
+        private ?string $deprecationReason = null,
     ) {
     }
 
