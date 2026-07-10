@@ -600,16 +600,17 @@ what matters:
 | parse: nested query | ~25 µs | ~40k/s |
 | build: schema from SDL | ~100 µs | ~10k/s |
 | validate: nested query | ~7 µs | ~142k/s |
-| execute: flat field | ~6 µs | ~171k/s |
-| execute: list of 100 | ~2.3 ms | ~440/s |
-| execute: list of 1000 | ~56 ms | ~18/s |
-| execute: 500 nested + DataLoader | ~28 ms | ~36/s |
-| full: parse+validate+execute (100) | ~2.4 ms | ~410/s |
+| execute: flat field | ~2 µs | ~470k/s |
+| execute: list of 100 | ~0.64 ms | ~1,560/s |
+| execute: list of 1000 | ~6.4 ms | ~157/s |
+| execute: 500 nested + DataLoader | ~7.8 ms | ~130/s |
+| full: parse+validate+execute (100) | ~0.68 ms | ~1,470/s |
 
-Parse, validate and small executions run in **microseconds**; a realistic page
-(10–100 objects) resolves in single-digit milliseconds, and the DataLoader collapses
-an N+1 relation into a single batched load. See [Benchmarks](docs/benchmarks.md) for
-methodology and scaling notes.
+Parse, validate and small executions run in **microseconds**; list execution scales
+linearly (~3.8 µs/object) after the executor completes synchronous fields inline. In an
+engine-to-engine comparison this beats `webonyx/graphql-php` (Lighthouse's engine)
+across every scenario, and end-to-end (Laravel + Eloquent) it resolves ~1.5× faster
+than Lighthouse. See [Benchmarks](docs/benchmarks.md).
 
 ---
 
