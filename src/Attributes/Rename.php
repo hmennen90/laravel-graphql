@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Hmennen90\GraphQL\Attributes;
+
+use Attribute;
+use Hmennen90\GraphQL\Engine\Language\AST\DirectiveNode;
+
+/** Code-first equivalent of `@rename(attribute:)`. */
+#[Attribute(Attribute::TARGET_METHOD)]
+final class Rename extends DirectiveAttribute
+{
+    public function __construct(private readonly string $attribute) {}
+
+    #[\Override]
+    public function toDirectiveNode(): DirectiveNode
+    {
+        return $this->node('rename', ['attribute' => $this->attribute]);
+    }
+}

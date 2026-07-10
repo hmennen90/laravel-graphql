@@ -21,6 +21,29 @@ final class Relay
         return base64_encode(self::PREFIX.$offset);
     }
 
+    /** Encodes a Relay global object identifier, `base64("Type:id")`. */
+    public static function toGlobalId(string $type, string|int $id): string
+    {
+        return base64_encode($type.':'.$id);
+    }
+
+    /**
+     * Decodes a Relay global object identifier into its type and id parts.
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    public static function fromGlobalId(string $globalId): array
+    {
+        $decoded = base64_decode($globalId, true);
+        if ($decoded === false || ! str_contains($decoded, ':')) {
+            return [null, null];
+        }
+
+        [$type, $id] = explode(':', $decoded, 2);
+
+        return [$type, $id];
+    }
+
     public static function offset(string $cursor): ?int
     {
         $decoded = base64_decode($cursor, true);

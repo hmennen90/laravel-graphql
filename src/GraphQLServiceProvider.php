@@ -108,6 +108,13 @@ final class GraphQLServiceProvider extends ServiceProvider
             $registry->register('rename', new \Hmennen90\GraphQL\Directives\RenameDirective());
             $registry->register('field', new \Hmennen90\GraphQL\Directives\FieldResolverDirective($app));
 
+            // Argument sanitisers & validation.
+            $registry->register('trim', new \Hmennen90\GraphQL\Directives\TrimDirective());
+            $registry->register('hash', new \Hmennen90\GraphQL\Directives\HashDirective());
+            $registry->register('globalId', new \Hmennen90\GraphQL\Directives\GlobalIdDirective());
+            $registry->register('rules', new \Hmennen90\GraphQL\Directives\RulesDirective());
+            $registry->register('validator', new \Hmennen90\GraphQL\Directives\ValidatorDirective($app));
+
             $registry->register('create', new \Hmennen90\GraphQL\Directives\Eloquent\CreateDirective($models));
             $registry->register('update', new \Hmennen90\GraphQL\Directives\Eloquent\UpdateDirective($models));
             $registry->register('delete', new \Hmennen90\GraphQL\Directives\Eloquent\DeleteDirective($models));

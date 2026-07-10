@@ -8,6 +8,7 @@ use Hmennen90\GraphQL\Engine\Language\AST\BooleanValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\DocumentNode;
 use Hmennen90\GraphQL\Engine\Language\AST\EnumTypeDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\EnumValueNode;
+use Hmennen90\GraphQL\Engine\Language\AST\FieldDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\FloatValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InputObjectTypeDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InputObjectTypeExtensionNode;
@@ -29,6 +30,7 @@ use Hmennen90\GraphQL\Engine\Language\AST\TypeNode;
 use Hmennen90\GraphQL\Engine\Language\AST\UnionTypeDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\ValueNode;
 use Hmennen90\GraphQL\Engine\Building\SchemaBuildContext;
+use Hmennen90\GraphQL\Engine\Executor\DefaultFieldResolver;
 use Hmennen90\GraphQL\Engine\Schema\Schema;
 use Hmennen90\GraphQL\Engine\Schema\SchemaConfig;
 use Hmennen90\GraphQL\Engine\Type\Definition\Argument;
@@ -63,7 +65,7 @@ final class AstToSchema
     private ?SchemaDefinitionNode $schemaDefinition = null;
 
     /**
-     * @param  array<string, SchemaDirective>  $schemaDirectives
+     * @param  array<string, SchemaDirective|ArgumentDirective>  $schemaDirectives
      */
     public function __construct(
         private readonly DocumentNode $document,
@@ -342,10 +344,65 @@ final class AstToSchema
                 }
             }
 
+            $field = $this->applyArgumentDirectives($typeName, $fieldNode, $field);
+
             $fields[] = $field;
         }
 
         return $fields;
+    }
+
+    /**
+     * Collects {@see ArgumentDirective}s declared on the field's arguments and, if
+     * any exist, wraps the field resolver so each argument's value is transformed
+     * (sanitised or validated) before resolution.
+     */
+    private function applyArgumentDirectives(string $typeName, FieldDefinitionNode $fieldNode, FieldDefinition $field): FieldDefinition
+    {
+        /** @var array<string, list<\Closure(mixed): mixed>> $transformers */
+        $transformers = [];
+        foreach ($fieldNode->arguments as $argNode) {
+            $argument = $field->getArg($argNode->name);
+            if ($argument === null) {
+                continue;
+            }
+            foreach ($argNode->directives as $directiveNode) {
+                $directive = $this->schemaDirectives[$directiveNode->name] ?? null;
+                if ($directive instanceof ArgumentDirective) {
+                    $transformers[$argNode->name][] = $directive->applyToArgument(
+                        $argument,
+                        $directiveNode,
+                        $this->buildContext($typeName, $fieldNode->name),
+                    );
+                }
+            }
+        }
+
+        if ($transformers === []) {
+            return $field;
+        }
+
+        $inner = $field->getResolver() ?? new DefaultFieldResolver();
+
+        return FieldDefinition::make(
+            $field->getName(),
+            $field->getType(),
+            static function (mixed $source, array $args, mixed $ctx, mixed $info) use ($inner, $transformers): mixed {
+                foreach ($transformers as $name => $fns) {
+                    if (! array_key_exists($name, $args)) {
+                        continue;
+                    }
+                    foreach ($fns as $fn) {
+                        $args[$name] = $fn($args[$name]);
+                    }
+                }
+
+                return $inner($source, $args, $ctx, $info);
+            },
+            array_values($field->args()),
+            $field->description(),
+            $field->deprecationReason(),
+        );
     }
 
     /**

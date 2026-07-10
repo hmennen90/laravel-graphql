@@ -14,7 +14,7 @@ final class SchemaBuilder
     /**
      * @param  array<string, array<string, callable>>  $resolvers  type => (field => resolver)
      * @param  array<string, callable>  $typeResolvers  abstract type => resolveType callback
-     * @param  array<string, SchemaDirective>  $schemaDirectives  SDL directive name => build-time handler
+     * @param  array<string, SchemaDirective|ArgumentDirective>  $schemaDirectives  SDL directive name => build-time handler
      */
     public static function fromSdl(
         string|Source $sdl,
