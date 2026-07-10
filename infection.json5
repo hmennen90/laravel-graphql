@@ -17,5 +17,9 @@
             "badge": "main"
         }
     },
-    "timeout": 20
+    // Baseline (CI, pcov): 100% mutation coverage, 79% covered MSI on src/Engine.
+    // Gates sit just below with headroom for variance; raise as survivors are killed.
+    "timeout": 20,
+    "minMsi": 72,
+    "minCoveredMsi": 75
 }
