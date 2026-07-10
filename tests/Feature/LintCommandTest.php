@@ -35,7 +35,7 @@ final class LintCommandTest extends TestCase
 
     public function test_lint_flags_unsupported_directives(): void
     {
-        file_put_contents($this->sdlFile, 'type Query { users: [User!]! @all @scope(name: "active") } type User { id: ID! }');
+        file_put_contents($this->sdlFile, 'type Query { users: [User!]! @all @builder(method: "App\\Foo") } type User { id: ID! }');
 
         $this->artisan('graphql:lint')->assertFailed();
     }
