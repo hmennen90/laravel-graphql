@@ -110,14 +110,37 @@ final class Executor
         $this->operation = $operation;
         $fields = FieldCollector::collect($this->schema, $rootType, $operation->selectionSet, $this->variableValues, $this->fragments);
 
-        try {
-            $data = $this->executeFields($rootType, $this->rootValue, [], $fields);
-        } catch (GraphQLError $e) {
-            $this->errors[] = $e;
-            $data = null;
+        $dataPromise = $this->executeFields($rootType, $this->rootValue, [], $fields);
+        $this->drain();
+
+        if ($dataPromise->state === SyncPromise::FULFILLED) {
+            /** @var array<string, mixed> $data */
+            $data = $dataPromise->value;
+
+            return new ExecutionResult($data, $this->errors);
         }
 
-        return new ExecutionResult($data, $this->errors);
+        // A non-null violation propagated to the root: data is null.
+        if ($dataPromise->value instanceof GraphQLError) {
+            $this->errors[] = $dataPromise->value;
+        } elseif ($dataPromise->value instanceof Throwable) {
+            $this->errors[] = new GraphQLError($dataPromise->value->getMessage(), previous: $dataPromise->value);
+        }
+
+        return new ExecutionResult(null, $this->errors);
+    }
+
+    /**
+     * Run the microtask queue, interleaving batched deferred fetches, until quiescent.
+     */
+    private function drain(): void
+    {
+        while (true) {
+            SyncPromise::runQueue();
+            if (! Deferred::runQueue()) {
+                break;
+            }
+        }
     }
 
     private function findOperation(?string $operationName): ?OperationDefinitionNode
@@ -143,17 +166,18 @@ final class Executor
     /**
      * @param  array<int, string|int>  $path
      * @param  array<string, array<int, FieldNode>>  $fields
-     * @return array<string, mixed>
      */
-    private function executeFields(ObjectType $parentType, mixed $source, array $path, array $fields): array
+    private function executeFields(ObjectType $parentType, mixed $source, array $path, array $fields): SyncPromise
     {
-        $results = [];
+        $keys = [];
+        $promises = [];
 
         foreach ($fields as $responseKey => $fieldNodes) {
             $fieldName = $fieldNodes[0]->name;
 
             if ($fieldName === '__typename') {
-                $results[$responseKey] = $parentType->name();
+                $keys[] = $responseKey;
+                $promises[] = SyncPromise::resolved($parentType->name());
 
                 continue;
             }
@@ -163,16 +187,18 @@ final class Executor
                 continue;
             }
 
-            $results[$responseKey] = $this->executeField(
-                $parentType,
-                $source,
-                $fieldDef,
-                $fieldNodes,
-                [...$path, $responseKey],
-            );
+            $keys[] = $responseKey;
+            $promises[] = $this->executeField($parentType, $source, $fieldDef, $fieldNodes, [...$path, $responseKey]);
         }
 
-        return $results;
+        return SyncPromise::all($promises)->then(static function (array $values) use ($keys): array {
+            $result = [];
+            foreach ($keys as $index => $key) {
+                $result[$key] = $values[$index];
+            }
+
+            return $result;
+        });
     }
 
     private function resolveFieldDefinition(ObjectType $parentType, string $fieldName): ?FieldDefinition
@@ -199,10 +225,10 @@ final class Executor
         FieldDefinition $fieldDef,
         array $fieldNodes,
         array $path,
-    ): mixed {
+    ): SyncPromise {
         $returnType = $fieldDef->getType();
 
-        try {
+        $completed = SyncPromise::try(function () use ($parentType, $source, $fieldDef, $fieldNodes, $path, $returnType): mixed {
             $args = Values::coerceArgumentValues($fieldDef, $fieldNodes[0], $this->variableValues);
             $info = new ResolveInfo(
                 $fieldNodes[0]->name,
@@ -227,8 +253,10 @@ final class Executor
                 }
             }
 
-            return $this->completeValue($returnType, $fieldNodes, $path, $resolve());
-        } catch (Throwable $e) {
+            return $resolve();
+        })->then(fn (mixed $resolved): mixed => $this->completeValue($returnType, $fieldNodes, $path, $resolved));
+
+        return $completed->then(null, function (Throwable $e) use ($returnType, $fieldNodes, $path): mixed {
             $located = $this->locatedError($e, $fieldNodes, $path);
             if ($returnType instanceof NonNull) {
                 throw $located;
@@ -236,34 +264,40 @@ final class Executor
             $this->errors[] = $located;
 
             return null;
-        }
+        });
     }
 
     /**
      * @param  array<int, FieldNode>  $fieldNodes
      * @param  array<int, string|int>  $path
      */
-    private function completeValue(Type&OutputType $type, array $fieldNodes, array $path, mixed $result): mixed
+    private function completeValue(Type&OutputType $type, array $fieldNodes, array $path, mixed $result): SyncPromise
     {
+        if ($result instanceof SyncPromise) {
+            return $result->then(fn (mixed $value): mixed => $this->completeValue($type, $fieldNodes, $path, $value));
+        }
+
         if ($type instanceof NonNull) {
             $inner = $type->wrappedType();
             if (! $inner instanceof OutputType) {
                 throw new GraphQLError('Invalid non-null wrapper over a non-output type.', path: $path);
             }
-            $completed = $this->completeValue($inner, $fieldNodes, $path, $result);
-            if ($completed === null) {
-                throw new GraphQLError(
-                    sprintf('Cannot return null for non-nullable field "%s".', $fieldNodes[0]->name),
-                    nodes: $fieldNodes,
-                    path: $path,
-                );
-            }
 
-            return $completed;
+            return $this->completeValue($inner, $fieldNodes, $path, $result)->then(function (mixed $completed) use ($fieldNodes, $path): mixed {
+                if ($completed === null) {
+                    throw new GraphQLError(
+                        sprintf('Cannot return null for non-nullable field "%s".', $fieldNodes[0]->name),
+                        nodes: $fieldNodes,
+                        path: $path,
+                    );
+                }
+
+                return $completed;
+            });
         }
 
         if ($result === null) {
-            return null;
+            return SyncPromise::resolved(null);
         }
 
         if ($type instanceof ListOfType) {
@@ -271,7 +305,7 @@ final class Executor
         }
 
         if ($type instanceof LeafType) {
-            return $type->serialize($result);
+            return SyncPromise::resolved($type->serialize($result));
         }
 
         if ($type instanceof CompositeType) {
@@ -284,9 +318,8 @@ final class Executor
     /**
      * @param  array<int, FieldNode>  $fieldNodes
      * @param  array<int, string|int>  $path
-     * @return array<int, mixed>
      */
-    private function completeListValue(ListOfType $type, array $fieldNodes, array $path, mixed $result): array
+    private function completeListValue(ListOfType $type, array $fieldNodes, array $path, mixed $result): SyncPromise
     {
         if (! is_iterable($result)) {
             throw new GraphQLError(
@@ -301,32 +334,31 @@ final class Executor
             throw new GraphQLError('Invalid list wrapper over a non-output type.', path: $path);
         }
 
-        $items = [];
+        $itemPromises = [];
         $index = 0;
         foreach ($result as $item) {
             $itemPath = [...$path, $index];
-            try {
-                $items[] = $this->completeValue($inner, $fieldNodes, $itemPath, $item);
-            } catch (Throwable $e) {
-                $located = $this->locatedError($e, $fieldNodes, $itemPath);
-                if ($inner instanceof NonNull) {
-                    throw $located;
-                }
-                $this->errors[] = $located;
-                $items[] = null;
-            }
+            $itemPromises[] = SyncPromise::try(fn (): mixed => $this->completeValue($inner, $fieldNodes, $itemPath, $item))
+                ->then(null, function (Throwable $e) use ($inner, $fieldNodes, $itemPath): mixed {
+                    $located = $this->locatedError($e, $fieldNodes, $itemPath);
+                    if ($inner instanceof NonNull) {
+                        throw $located;
+                    }
+                    $this->errors[] = $located;
+
+                    return null;
+                });
             $index++;
         }
 
-        return $items;
+        return SyncPromise::all($itemPromises);
     }
 
     /**
      * @param  array<int, FieldNode>  $fieldNodes
      * @param  array<int, string|int>  $path
-     * @return array<string, mixed>
      */
-    private function completeObjectValue(CompositeType $type, array $fieldNodes, array $path, mixed $result): array
+    private function completeObjectValue(CompositeType $type, array $fieldNodes, array $path, mixed $result): SyncPromise
     {
         $objectType = $this->resolveObjectType($type, $result, $fieldNodes, $path);
 
