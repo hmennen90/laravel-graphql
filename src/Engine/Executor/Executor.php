@@ -217,9 +217,17 @@ final class Executor
             );
 
             $resolver = $fieldDef->getResolver() ?? $this->defaultResolver;
-            $resolved = $resolver($source, $args, $this->context, $info);
+            $resolve = fn (): mixed => $resolver($source, $args, $this->context, $info);
 
-            return $this->completeValue($returnType, $fieldNodes, $path, $resolved);
+            foreach ($fieldNodes[0]->directives as $directiveNode) {
+                $middleware = $this->schema->getDirectiveMiddleware($directiveNode->name);
+                if ($middleware !== null) {
+                    $next = $resolve;
+                    $resolve = fn (): mixed => $middleware->handle($directiveNode, $info, $next);
+                }
+            }
+
+            return $this->completeValue($returnType, $fieldNodes, $path, $resolve());
         } catch (Throwable $e) {
             $located = $this->locatedError($e, $fieldNodes, $path);
             if ($returnType instanceof NonNull) {

@@ -58,9 +58,13 @@ final class AstToSchema
 
     private ?SchemaDefinitionNode $schemaDefinition = null;
 
+    /**
+     * @param  array<string, SchemaDirective>  $schemaDirectives
+     */
     public function __construct(
         private readonly DocumentNode $document,
         private readonly ResolverMap $resolvers,
+        private readonly array $schemaDirectives = [],
     ) {
     }
 
@@ -198,13 +202,22 @@ final class AstToSchema
                     : Argument::make($argNode->name, $argType, $argNode->description);
             }
 
-            $fields[] = FieldDefinition::make(
+            $field = FieldDefinition::make(
                 $fieldNode->name,
                 $this->buildOutputType($fieldNode->type),
                 $this->resolvers->resolver($typeName, $fieldNode->name),
                 $args,
                 $fieldNode->description,
             );
+
+            foreach ($fieldNode->directives as $directiveNode) {
+                $directive = $this->schemaDirectives[$directiveNode->name] ?? null;
+                if ($directive instanceof SchemaDirective) {
+                    $field = $directive->applyToField($field, $directiveNode);
+                }
+            }
+
+            $fields[] = $field;
         }
 
         return $fields;

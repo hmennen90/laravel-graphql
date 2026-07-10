@@ -126,6 +126,13 @@ final class Schema
         return $this->directives[$name] ?? null;
     }
 
+    public function getDirectiveMiddleware(string $name): ?\Hmennen90\GraphQL\Engine\Executor\DirectiveMiddleware
+    {
+        $middleware = $this->config->directiveMiddleware[$name] ?? null;
+
+        return $middleware instanceof \Hmennen90\GraphQL\Engine\Executor\DirectiveMiddleware ? $middleware : null;
+    }
+
     /**
      * @return array<string, Directive>
      */

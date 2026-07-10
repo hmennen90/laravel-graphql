@@ -15,6 +15,7 @@ final class SchemaConfig
     /**
      * @param  array<int, Type&NamedType>  $types  Additional types not reachable from the roots.
      * @param  array<int, Directive>  $directives  Custom directives; defaults to the built-ins when empty.
+     * @param  array<string, \Hmennen90\GraphQL\Engine\Executor\DirectiveMiddleware>  $directiveMiddleware  Runtime handlers keyed by directive name.
      */
     public function __construct(
         public readonly ?ObjectType $query = null,
@@ -22,6 +23,7 @@ final class SchemaConfig
         public readonly ?ObjectType $subscription = null,
         public readonly array $types = [],
         public readonly array $directives = [],
+        public readonly array $directiveMiddleware = [],
     ) {
     }
 }
