@@ -21,7 +21,10 @@ use Hmennen90\GraphQL\Engine\Language\AST\FragmentDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\FragmentSpreadNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InlineFragmentNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InputObjectTypeDefinitionNode;
+use Hmennen90\GraphQL\Engine\Language\AST\InputObjectTypeExtensionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InputValueDefinitionNode;
+use Hmennen90\GraphQL\Engine\Language\AST\InterfaceTypeExtensionNode;
+use Hmennen90\GraphQL\Engine\Language\AST\ObjectTypeExtensionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\IntValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InterfaceTypeDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\ListTypeNode;
@@ -99,6 +102,7 @@ final class Parser
             return match ($keyword) {
                 'query', 'mutation', 'subscription' => $this->parseOperationDefinition(),
                 'fragment' => $this->parseFragmentDefinition(),
+                'extend' => $this->parseTypeExtension(),
                 'schema', 'scalar', 'type', 'interface', 'union', 'enum', 'input', 'directive'
                     => $this->parseTypeSystemDefinition(),
                 default => throw $this->unexpected(),
@@ -415,6 +419,68 @@ final class Parser
     }
 
     // -- Type system (SDL) ----------------------------------------------------
+
+    private function parseTypeExtension(): DefinitionNode
+    {
+        $start = $this->token();
+        $this->expectKeyword('extend');
+        $keyword = $this->token()->value;
+
+        return match ($keyword) {
+            'type' => $this->parseObjectTypeExtension($start),
+            'interface' => $this->parseInterfaceTypeExtension($start),
+            'input' => $this->parseInputObjectTypeExtension($start),
+            default => throw SyntaxError::at(
+                $this->source,
+                $this->token()->start,
+                sprintf('Unsupported type extension "extend %s".', (string) $keyword),
+            ),
+        };
+    }
+
+    private function parseObjectTypeExtension(Token $start): ObjectTypeExtensionNode
+    {
+        $this->expectKeyword('type');
+        $name = $this->parseName();
+
+        return $this->loc(new ObjectTypeExtensionNode(
+            $name,
+            $this->parseImplementsInterfaces(),
+            $this->parseDirectives(true),
+            $this->parseFieldsDefinition(),
+        ), $start);
+    }
+
+    private function parseInterfaceTypeExtension(Token $start): InterfaceTypeExtensionNode
+    {
+        $this->expectKeyword('interface');
+        $name = $this->parseName();
+
+        return $this->loc(new InterfaceTypeExtensionNode(
+            $name,
+            $this->parseImplementsInterfaces(),
+            $this->parseDirectives(true),
+            $this->parseFieldsDefinition(),
+        ), $start);
+    }
+
+    private function parseInputObjectTypeExtension(Token $start): InputObjectTypeExtensionNode
+    {
+        $this->expectKeyword('input');
+        $name = $this->parseName();
+        $directives = $this->parseDirectives(true);
+
+        $fields = [];
+        if ($this->peek(TokenKind::BRACE_L)) {
+            $this->expect(TokenKind::BRACE_L);
+            while (! $this->peek(TokenKind::BRACE_R)) {
+                $fields[] = $this->parseInputValueDefinition();
+            }
+            $this->expect(TokenKind::BRACE_R);
+        }
+
+        return $this->loc(new InputObjectTypeExtensionNode($name, $directives, $fields), $start);
+    }
 
     private function parseTypeSystemDefinition(): TypeSystemDefinitionNode
     {

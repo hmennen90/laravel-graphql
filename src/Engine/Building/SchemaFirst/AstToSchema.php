@@ -10,8 +10,11 @@ use Hmennen90\GraphQL\Engine\Language\AST\EnumTypeDefinitionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\EnumValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\FloatValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InputObjectTypeDefinitionNode;
+use Hmennen90\GraphQL\Engine\Language\AST\InputObjectTypeExtensionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\IntValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\InterfaceTypeDefinitionNode;
+use Hmennen90\GraphQL\Engine\Language\AST\InterfaceTypeExtensionNode;
+use Hmennen90\GraphQL\Engine\Language\AST\ObjectTypeExtensionNode;
 use Hmennen90\GraphQL\Engine\Language\AST\ListTypeNode;
 use Hmennen90\GraphQL\Engine\Language\AST\ListValueNode;
 use Hmennen90\GraphQL\Engine\Language\AST\NamedTypeNode;
@@ -74,6 +77,7 @@ final class AstToSchema
             $this->types[$name] = $scalar;
         }
 
+        $extensions = [];
         foreach ($this->document->definitions as $definition) {
             if ($definition instanceof SchemaDefinitionNode) {
                 $this->schemaDefinition = $definition;
@@ -86,7 +90,17 @@ final class AstToSchema
                 || $definition instanceof ScalarTypeDefinitionNode
             ) {
                 $this->definitions[$definition->name] = $definition;
+            } elseif (
+                $definition instanceof ObjectTypeExtensionNode
+                || $definition instanceof InterfaceTypeExtensionNode
+                || $definition instanceof InputObjectTypeExtensionNode
+            ) {
+                $extensions[] = $definition;
             }
+        }
+
+        foreach ($extensions as $extension) {
+            $this->applyExtension($extension);
         }
 
         foreach ($this->definitions as $name => $definition) {
@@ -99,6 +113,46 @@ final class AstToSchema
             subscription: $this->rootType(OperationType::SUBSCRIPTION, 'Subscription'),
             types: array_values($this->types),
         ));
+    }
+
+    private function applyExtension(
+        ObjectTypeExtensionNode|InterfaceTypeExtensionNode|InputObjectTypeExtensionNode $extension,
+    ): void {
+        $base = $this->definitions[$extension->name] ?? null;
+
+        if ($extension instanceof ObjectTypeExtensionNode) {
+            if (! $base instanceof ObjectTypeDefinitionNode) {
+                throw new LogicException(sprintf('Cannot extend unknown object type "%s".', $extension->name));
+            }
+            $this->definitions[$extension->name] = new ObjectTypeDefinitionNode(
+                $base->description,
+                $base->name,
+                array_merge($base->interfaces, $extension->interfaces),
+                array_merge($base->directives, $extension->directives),
+                array_merge($base->fields, $extension->fields),
+            );
+        } elseif ($extension instanceof InterfaceTypeExtensionNode) {
+            if (! $base instanceof InterfaceTypeDefinitionNode) {
+                throw new LogicException(sprintf('Cannot extend unknown interface type "%s".', $extension->name));
+            }
+            $this->definitions[$extension->name] = new InterfaceTypeDefinitionNode(
+                $base->description,
+                $base->name,
+                array_merge($base->interfaces, $extension->interfaces),
+                array_merge($base->directives, $extension->directives),
+                array_merge($base->fields, $extension->fields),
+            );
+        } else {
+            if (! $base instanceof InputObjectTypeDefinitionNode) {
+                throw new LogicException(sprintf('Cannot extend unknown input type "%s".', $extension->name));
+            }
+            $this->definitions[$extension->name] = new InputObjectTypeDefinitionNode(
+                $base->description,
+                $base->name,
+                array_merge($base->directives, $extension->directives),
+                array_merge($base->fields, $extension->fields),
+            );
+        }
     }
 
     private function createType(
