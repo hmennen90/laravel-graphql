@@ -7,8 +7,9 @@ namespace {{ namespace }};
 use Hmennen90\GraphQL\Engine\Executor\ResolveInfo;
 
 /**
- * Single-field query resolver. Wire it up in SDL with:
- *   type Query { example: String @field(resolver: "{{ namespace }}\\{{ class }}") }
+ * Single-field query resolver. Resolved by convention for the matching field, e.g.
+ * `type Query { {{ class }}: ... }` (StudlyCase), or bind explicitly with
+ * `@field(resolver: "{{ namespace }}\\{{ class }}")`.
  */
 final class {{ class }}
 {

@@ -7,8 +7,9 @@ namespace {{ namespace }};
 use Hmennen90\GraphQL\Engine\Executor\ResolveInfo;
 
 /**
- * Single-field mutation resolver. Wire it up in SDL with:
- *   type Mutation { example: String @field(resolver: "{{ namespace }}\\{{ class }}") }
+ * Single-field mutation resolver. Resolved by convention for the matching field, e.g.
+ * `type Mutation { {{ class }}: ... }` (StudlyCase), or bind explicitly with
+ * `@field(resolver: "{{ namespace }}\\{{ class }}")`.
  */
 final class {{ class }}
 {

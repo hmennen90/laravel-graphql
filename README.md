@@ -692,9 +692,9 @@ webonyx/graphql-php) is in the
 Not a drop-in replacement, but a realistic migration: the CRUD directive **names and
 semantics** were kept compatible, so a schema on the common core
 (`@all/@find/@paginate/@hasMany/@whereConditions/@orderBy/@create…`) moves over with
-config translation and explicit `@field` resolver bindings. Lighthouse's
-convention-resolved query/mutation classes, soft-delete/`@scope`/`@builder` directives,
-custom PHP directives and subscriptions need rework. See the full
+config translation. Convention-resolved query/mutation classes carry over too
+(`graphql.namespaces`). Soft-delete/`@scope`/`@builder` directives, custom PHP
+directives and subscriptions need rework. See the full
 [migration guide](https://hmennen90.github.io/laravel-graphql/migrating-from-lighthouse/).
 
 ## License

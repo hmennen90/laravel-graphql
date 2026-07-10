@@ -17,6 +17,40 @@ return [
 ];
 ```
 
+## Resolver conventions
+
+A root `Query`/`Mutation` field resolves in this order: an explicit resolver map entry,
+a directive (`@all`, `@field`, …), then **convention** — an invokable class
+`<namespace>\<StudlyField>`:
+
+```php
+// config/graphql.php
+'namespaces' => [
+    'queries' => 'App\\GraphQL\\Queries',
+    'mutations' => 'App\\GraphQL\\Mutations',
+],
+```
+
+```graphql
+type Query { latestPosts: [Post!]! }   # -> App\GraphQL\Queries\LatestPosts::__invoke
+```
+
+```php
+namespace App\GraphQL\Queries;
+
+final class LatestPosts
+{
+    public function __invoke(mixed $root, array $args, mixed $context, mixed $info): iterable
+    {
+        return \App\Models\Post::latest()->limit(10)->get();
+    }
+}
+```
+
+The class is resolved through the container (so dependencies are injected). If no such
+class exists the field falls back to the default resolver. `make:graphql-query` /
+`make:graphql-mutation` scaffold these.
+
 ## Artisan commands
 
 ```bash

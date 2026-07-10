@@ -19,6 +19,7 @@ use Hmennen90\GraphQL\Engine\Language\Parser;
 use Hmennen90\GraphQL\Engine\Schema\Schema;
 use Hmennen90\GraphQL\Engine\Validation\DocumentValidator;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 /**
@@ -165,10 +166,51 @@ final class GraphQL
             $registry = $this->container->make(DirectiveRegistry::class);
             $document = $this->document($sdl, $schemaConfig['cache'] ?? null);
 
-            return SchemaBuilder::fromDocument($document, $resolvers, schemaDirectives: $registry->all());
+            return SchemaBuilder::fromDocument(
+                $document,
+                $resolvers,
+                schemaDirectives: $registry->all(),
+                fallbackResolver: $this->conventionResolver(),
+            );
         }
 
         throw new RuntimeException('No GraphQL schema is configured. Set graphql.schema.factory or graphql.schema.sdl_path.');
+    }
+
+    /**
+     * Convention-based resolver for root Query/Mutation fields without an explicit
+     * resolver or directive: `Query.latestPosts` -> `<queries namespace>\LatestPosts`
+     * (an invokable class). Returns null when no matching class exists, so the field
+     * falls back to the default resolver.
+     */
+    private function conventionResolver(): callable
+    {
+        $namespaces = is_array($this->config['namespaces'] ?? null) ? $this->config['namespaces'] : [];
+        $queries = is_string($namespaces['queries'] ?? null) ? $namespaces['queries'] : null;
+        $mutations = is_string($namespaces['mutations'] ?? null) ? $namespaces['mutations'] : null;
+        $container = $this->container;
+
+        return static function (string $type, string $field) use ($queries, $mutations, $container): ?callable {
+            $namespace = match ($type) {
+                'Query' => $queries,
+                'Mutation' => $mutations,
+                default => null,
+            };
+            if ($namespace === null) {
+                return null;
+            }
+
+            $class = $namespace.'\\'.Str::studly($field);
+            if (! class_exists($class)) {
+                return null;
+            }
+
+            return static function (mixed $root, array $args, mixed $ctx, mixed $info) use ($container, $class): mixed {
+                $instance = $container->make($class);
+
+                return is_object($instance) && is_callable($instance) ? $instance($root, $args, $ctx, $info) : null;
+            };
+        };
     }
 
     /** Parse the SDL, using a cached AST when schema caching is enabled and present. */

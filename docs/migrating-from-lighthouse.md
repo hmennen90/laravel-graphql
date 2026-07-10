@@ -22,10 +22,12 @@ There is no automatic converter — plan a deliberate migration, not a package s
 3. **Recreate config.** Translate `config/lighthouse.php` → `config/graphql.php`:
    model namespace (`lighthouse.namespaces.models` → `graphql.models.namespace`),
    pagination defaults, the route, and security limits.
-4. **Make resolvers explicit.** Lighthouse auto-resolves `Query.foo`/`Mutation.foo` to
-   invokable classes by namespace **without a directive**. This package does not — bind
-   them with `@field(resolver: "App\\GraphQL\\Queries\\Foo")` or a resolver map. (Fields
-   backed by directives like `@all`/`@create` need no change.)
+4. **Resolver classes carry over.** Like Lighthouse, this package resolves
+   `Query.foo`/`Mutation.foo` by convention to an invokable class **without a
+   directive** — configure the namespaces (`graphql.namespaces.queries` /
+   `.mutations`, default `App\GraphQL\Queries` / `App\GraphQL\Mutations`). The field
+   name is StudlyCased (`latestPosts` → `LatestPosts`). Fields backed by directives
+   (`@all`/`@create`) or a `@field(resolver:)` binding work too.
 5. **Replace unsupported directives** (see below) with plain resolvers or a custom
    directive.
 6. **Rewrite custom directives** against `SchemaDirective` / `ArgumentDirective`
@@ -50,7 +52,6 @@ There is no automatic converter — plan a deliberate migration, not a package s
 
 | Lighthouse | Migration |
 |---|---|
-| convention-resolved `Query`/`Mutation` classes | add `@field(resolver:)` or a resolver map |
 | `@scope`, `@whereHasConditions`, single-field `@eq/@neq/@in/@like/@whereBetween/@whereNull` | use `@whereConditions`, or a plain resolver |
 | `@trashed` / `@forceDelete` / `@restore` (soft deletes) | plain resolver or a custom directive |
 | `@with` / `@withCount`, `@builder`, `@aggregate`, `@limit`, `@spread`, `@drop` | plain resolver / query modifier |

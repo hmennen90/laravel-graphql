@@ -120,6 +120,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Resolver namespaces (convention-based resolution)
+    |--------------------------------------------------------------------------
+    |
+    | A root Query/Mutation field with no explicit resolver or directive is
+    | resolved by convention to an invokable class `<namespace>\<StudlyField>`
+    | (e.g. Query.latestPosts -> App\GraphQL\Queries\LatestPosts). Set an entry
+    | to null to disable convention resolution for that operation.
+    */
+    'namespaces' => [
+        'queries' => 'App\\GraphQL\\Queries',
+        'mutations' => 'App\\GraphQL\\Mutations',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Pagination defaults for @paginate
     |--------------------------------------------------------------------------
     */
