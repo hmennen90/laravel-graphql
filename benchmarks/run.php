@@ -167,4 +167,30 @@ foreach ($results as $r) {
     $time = $us >= 1000 ? sprintf('%.2f ms', $us / 1000) : sprintf('%.1f µs', $us);
     printf("%-38s %14s %14s\n", $r['name'], number_format($r['ops'], 0), $time);
 }
-printf("\npeak memory: %.1f MB\n\n", memory_get_peak_usage(true) / 1_048_576);
+printf("\npeak memory: %.1f MB\n", memory_get_peak_usage(true) / 1_048_576);
+
+// ---------------------------------------------------------------------------
+// Throughput & memory stability (sustained load proxy)
+//
+// PHP has no in-process threads, so "concurrency" for a request/response engine is
+// really sustained throughput: how many full operations/sec one worker serves, and
+// whether memory stays flat across many requests (no per-request leak).
+// ---------------------------------------------------------------------------
+
+gc_collect_cycles();
+$before = memory_get_usage();
+$iterations = 20_000;
+$start = hrtime(true);
+for ($i = 0; $i < $iterations; $i++) {
+    $doc = Parser::parse($listQuery);
+    DocumentValidator::validate($schema, $doc);
+    Executor::execute($schema, $doc);
+}
+$elapsed = (hrtime(true) - $start) / 1_000_000_000;
+gc_collect_cycles();
+$growth = (memory_get_usage() - $before) / 1_048_576;
+
+printf("\nsustained load (%s full requests of `list of 100`):\n", number_format($iterations));
+printf("  throughput:   %s req/s\n", number_format($iterations / $elapsed, 0));
+printf("  heap growth:  %+.2f MB over the run (≈0 = no per-request leak)\n\n", $growth);
+
