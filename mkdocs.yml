@@ -52,5 +52,6 @@ nav:
   - Validation & Sanitisers: validation.md
   - Apollo Federation: federation.md
   - Benchmarks: benchmarks.md
+  - Spec Conformance: conformance.md
   - Comparison: comparison.md
   - Migrating from Lighthouse: migrating-from-lighthouse.md
