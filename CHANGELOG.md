@@ -1,3 +1,13 @@
+## [1.1.0](https://github.com/hmennen90/laravel-graphql/compare/v1.0.0...v1.1.0) (2026-07-10)
+
+### Features
+
+* **federation:** Apollo Federation v2 subgraph SDL ([d94875c](https://github.com/hmennen90/laravel-graphql/commit/d94875c2cadb2f7c2d9aaaaa1fa854e3a6e008b8))
+
+### Performance Improvements
+
+* **engine:** fix O(N²) microtask drain + add benchmark suite ([bc39c7c](https://github.com/hmennen90/laravel-graphql/commit/bc39c7c0f0411b562c946bdcba4ea0dd5b502663))
+
 ## 1.0.0 (2026-07-10)
 
 ### Features
