@@ -1,3 +1,13 @@
+## [1.4.0](https://github.com/hmennen90/laravel-graphql/compare/v1.3.0...v1.4.0) (2026-07-10)
+
+### Features
+
+* **subscriptions:** Server-Sent Events (graphql-sse) transport ([de868f1](https://github.com/hmennen90/laravel-graphql/commit/de868f157ce4a17877b903532ba3522635fc9cc9))
+
+### Bug Fixes
+
+* **engine:** apply [@deprecated](https://github.com/deprecated) on SDL fields and enum values; add spec conformance suite ([b283602](https://github.com/hmennen90/laravel-graphql/commit/b28360291bc2e5eb26f819a3b57d81268becae25))
+
 ## [1.3.0](https://github.com/hmennen90/laravel-graphql/compare/v1.2.1...v1.3.0) (2026-07-10)
 
 ### Features
