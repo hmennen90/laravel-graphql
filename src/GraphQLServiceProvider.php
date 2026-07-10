@@ -82,9 +82,18 @@ final class GraphQLServiceProvider extends ServiceProvider
             $registry = new \Hmennen90\GraphQL\Directives\DirectiveRegistry();
             $models = $app->make(\Hmennen90\GraphQL\Eloquent\ModelResolver::class);
 
+            $config = $app->make(Repository::class);
+            $default = $config->get('graphql.pagination.default_count', 15);
+            $max = $config->get('graphql.pagination.max_count', 100);
+
             $registry->register('all', new \Hmennen90\GraphQL\Directives\Eloquent\AllDirective($models));
             $registry->register('find', new \Hmennen90\GraphQL\Directives\Eloquent\FindDirective($models));
             $registry->register('first', new \Hmennen90\GraphQL\Directives\Eloquent\FirstDirective($models));
+            $registry->register('paginate', new \Hmennen90\GraphQL\Directives\Eloquent\PaginateDirective(
+                $models,
+                is_int($default) ? $default : 15,
+                is_int($max) ? $max : 100,
+            ));
             $registry->register('can', new \Hmennen90\GraphQL\Directives\CanDirective());
             $registry->register('cacheControl', new \Hmennen90\GraphQL\Directives\CacheControlDirective());
 
