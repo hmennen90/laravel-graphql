@@ -9,6 +9,7 @@ use Hmennen90\GraphQL\Engine\Schema\Schema;
 use Hmennen90\GraphQL\Execution\ErrorHandler;
 use Hmennen90\GraphQL\Http\Controllers\GraphiQLController;
 use Hmennen90\GraphQL\Http\Controllers\GraphQLController;
+use Hmennen90\GraphQL\Http\PersistedQueryResolver;
 use Hmennen90\GraphQL\Http\ResponseBuilder;
 use Hmennen90\GraphQL\Subscriptions\CacheSubscriptionStore;
 use Hmennen90\GraphQL\Subscriptions\SubscriptionManager;
@@ -46,6 +47,10 @@ final class GraphQLServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(ResponseBuilder::class);
+        $this->app->singleton(PersistedQueryResolver::class, static fn (Application $app): PersistedQueryResolver => new PersistedQueryResolver(
+            $app->make(CacheRepository::class),
+            $app->make(Repository::class),
+        ));
 
         $this->app->singleton(SubscriptionStore::class, static fn (Application $app): SubscriptionStore => new CacheSubscriptionStore($app->make(CacheRepository::class)));
         $this->app->singleton(SubscriptionManager::class);

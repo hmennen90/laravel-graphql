@@ -6,6 +6,8 @@ namespace Hmennen90\GraphQL\Http\Controllers;
 
 use Hmennen90\GraphQL\Execution\Context;
 use Hmennen90\GraphQL\GraphQL;
+use Hmennen90\GraphQL\Http\PersistedQueryException;
+use Hmennen90\GraphQL\Http\PersistedQueryResolver;
 use Hmennen90\GraphQL\Http\RequestParser;
 use Hmennen90\GraphQL\Http\ResponseBuilder;
 use Hmennen90\GraphQL\Subscriptions\SubscriptionManager;
@@ -23,6 +25,7 @@ final class GraphQLController
         private readonly Gate $gate,
         private readonly Repository $config,
         private readonly SubscriptionManager $subscriptions,
+        private readonly PersistedQueryResolver $persistedQueries,
     ) {
     }
 
@@ -46,6 +49,14 @@ final class GraphQLController
 
         $results = [];
         foreach ($operations as $operation) {
+            try {
+                $operation['query'] = $this->persistedQueries->resolve($operation['query'], $operation['extensions']);
+            } catch (PersistedQueryException $e) {
+                $results[] = ['errors' => [['message' => $e->getMessage(), 'extensions' => ['code' => $e->errorCode]]]];
+
+                continue;
+            }
+
             if ($operation['query'] === '') {
                 $results[] = ['errors' => [['message' => 'No GraphQL query was provided.']]];
 
@@ -72,7 +83,7 @@ final class GraphQLController
     }
 
     /**
-     * @param  array{query: string, variables: array<string, mixed>, operationName: ?string}  $operation
+     * @param  array{query: string, variables: array<string, mixed>, operationName: ?string, extensions: array<string, mixed>}  $operation
      * @return array<string, mixed>
      */
     private function subscribe(array $operation, ?string $rootField): array

@@ -15,7 +15,7 @@ final class RequestParser
     private bool $batch = false;
 
     /**
-     * @return array<int, array{query: string, variables: array<string, mixed>, operationName: ?string}>
+     * @return array<int, array{query: string, variables: array<string, mixed>, operationName: ?string, extensions: array<string, mixed>}>
      */
     public function parse(Request $request): array
     {
@@ -55,7 +55,7 @@ final class RequestParser
 
     /**
      * @param  array<int|string, mixed>  $op
-     * @return array{query: string, variables: array<string, mixed>, operationName: ?string}
+     * @return array{query: string, variables: array<string, mixed>, operationName: ?string, extensions: array<string, mixed>}
      */
     private function normalize(array $op): array
     {
@@ -70,9 +70,21 @@ final class RequestParser
             $variables = [];
         }
 
+        $extensions = $op['extensions'] ?? [];
+        if (is_string($extensions)) {
+            $decoded = json_decode($extensions, true);
+            $extensions = is_array($decoded) ? $decoded : [];
+        }
+        if (! is_array($extensions)) {
+            $extensions = [];
+        }
+
         $operationName = isset($op['operationName']) && is_string($op['operationName']) ? $op['operationName'] : null;
 
-        /** @var array<string, mixed> $variables */
-        return ['query' => $query, 'variables' => $variables, 'operationName' => $operationName];
+        /**
+         * @var array<string, mixed> $variables
+         * @var array<string, mixed> $extensions
+         */
+        return ['query' => $query, 'variables' => $variables, 'operationName' => $operationName, 'extensions' => $extensions];
     }
 }
