@@ -246,7 +246,11 @@ final class AstToSchema
     {
         $values = [];
         foreach ($node->values as $value) {
-            $values[] = new EnumValueDefinition($value->name, description: $value->description);
+            $values[] = new EnumValueDefinition(
+                $value->name,
+                description: $value->description,
+                deprecationReason: $this->deprecationOf($value->directives),
+            );
         }
 
         return new EnumType($node->name, $values, $node->description);
@@ -335,7 +339,8 @@ final class AstToSchema
                 $this->resolvers->resolver($typeName, $fieldNode->name),
                 $args,
                 $fieldNode->description,
-                metadata: $this->collectArgBuilders($fieldNode),
+                $this->deprecationOf($fieldNode->directives),
+                $this->collectArgBuilders($fieldNode),
             );
 
             foreach ($fieldNode->directives as $directiveNode) {
