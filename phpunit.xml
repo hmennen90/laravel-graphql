@@ -10,9 +10,7 @@
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>
-        <testsuite name="Feature">
-            <directory>tests/Feature</directory>
-        </testsuite>
+        <!-- The Feature suite (orchestra/testbench) is added with the Laravel layer. -->
     </testsuites>
     <source>
         <include>
