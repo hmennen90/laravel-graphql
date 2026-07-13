@@ -1,3 +1,9 @@
+## [1.6.0](https://github.com/hmennen90/laravel-graphql/compare/v1.5.0...v1.6.0) (2026-07-13)
+
+### Features
+
+* **docs:** live PHP-WASM playground + benchmark dashboard on Pages ([#1](https://github.com/hmennen90/laravel-graphql/issues/1)) ([6192acf](https://github.com/hmennen90/laravel-graphql/commit/6192acf54052949e01ea59c3514d882f52cac62f))
+
 ## [1.5.0](https://github.com/hmennen90/laravel-graphql/compare/v1.4.0...v1.5.0) (2026-07-10)
 
 ### Features
