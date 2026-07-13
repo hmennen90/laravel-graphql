@@ -19,6 +19,7 @@ declare(strict_types=1);
  * comparison chart from an illustrative placeholder into a real, same-hardware result.
  */
 
+use GraphQL\Deferred as WebonyxDeferred;
 use GraphQL\GraphQL as Webonyx;
 use GraphQL\Language\Parser as WebonyxParser;
 use GraphQL\Type\Definition\ObjectType as WebonyxObjectType;
@@ -88,6 +89,55 @@ function make_users(int $n): array
     return $users;
 }
 
+/**
+ * Same shape run.php uses: 500 orders reference 20 distinct customers, so a batching
+ * loader coalesces them into a single load.
+ *
+ * @return list<array{id: string, total: int, customerId: string}>
+ */
+function make_orders(int $n): array
+{
+    $orders = [];
+    for ($i = 1; $i <= $n; $i++) {
+        $orders[] = ['id' => (string) $i, 'total' => $i * 10, 'customerId' => (string) (($i % 20) + 1)];
+    }
+
+    return $orders;
+}
+
+/**
+ * webonyx equivalent of our DataLoader: each load() queues a key and returns a
+ * Deferred; the first Deferred to resolve performs a single batched lookup for every
+ * key queued so far. One instance per request, exactly like run.php's loader.
+ */
+final class WebonyxUserLoader
+{
+    /** @var array<string, true> */
+    private array $queue = [];
+
+    /** @var array<string, mixed>|null */
+    private ?array $result = null;
+
+    /** @param  array<string, array<string, mixed>>  $byId */
+    public function __construct(private readonly array $byId) {}
+
+    public function load(string $id): WebonyxDeferred
+    {
+        $this->queue[$id] = true;
+
+        return new WebonyxDeferred(function () use ($id): mixed {
+            if ($this->result === null) {
+                $this->result = [];
+                foreach (array_keys($this->queue) as $key) {
+                    $this->result[$key] = $this->byId[$key] ?? null;
+                }
+            }
+
+            return $this->result[$id] ?? null;
+        });
+    }
+}
+
 // Identical SDL to benchmarks/run.php so every per-phase overlay is apples-to-apples.
 $sdl = <<<'GRAPHQL'
 type Query { hello: String users(count: Int): [User!]! orders(count: Int): [Order!]! }
@@ -119,7 +169,14 @@ $wOrder = new WebonyxObjectType([
     'fields' => [
         'id' => WebonyxType::nonNull(WebonyxType::id()),
         'total' => WebonyxType::int(),
-        'customer' => ['type' => $wUser, 'resolve' => static fn () => null],
+        // webonyx's Deferred is its DataLoader equivalent: returning one defers the
+        // field so the executor drains all of them together (one batched load).
+        'customer' => [
+            'type' => $wUser,
+            'resolve' => static fn (array $order, array $args, mixed $ctx) => is_object($ctx) && method_exists($ctx, 'load')
+                ? $ctx->load($order['customerId'])
+                : null,
+        ],
     ],
 ]);
 $wQuery = new WebonyxObjectType([
@@ -134,7 +191,7 @@ $wQuery = new WebonyxObjectType([
         'orders' => [
             'type' => WebonyxType::nonNull(WebonyxType::listOf(WebonyxType::nonNull($wOrder))),
             'args' => ['count' => WebonyxType::int()],
-            'resolve' => static fn ($r, array $a) => [],
+            'resolve' => static fn ($r, array $a) => make_orders(is_int($a['count'] ?? null) ? $a['count'] : 100),
         ],
     ],
 ]);
@@ -213,9 +270,9 @@ if ($emitJson) {
     ];
 
     // Per-phase / per-scenario webonyx overlays, keyed by the same ids run.php emits,
-    // so the dashboard can draw a webonyx series next to ours in every chart that has
-    // a fair equivalent. Scenarios with no honest webonyx counterpart (the DataLoader
-    // batch, the full pipeline) are deliberately omitted rather than faked.
+    // so the dashboard draws a webonyx series next to ours in every chart. Every
+    // run.php scenario has a fair webonyx equivalent — including the DataLoader batch
+    // (webonyx Deferred) and the full parse+validate+execute pipeline.
     $phaseWebonyxUs = [
         'parse_small' => median_ns(static fn () => WebonyxParser::parse($flat)) / 1000,
         'parse_nested' => median_ns(static fn () => WebonyxParser::parse($nested)) / 1000,
@@ -223,9 +280,29 @@ if ($emitJson) {
         'validate_nested' => median_ns(static fn () => WebonyxValidator::validate($webonyx, $wNested)) / 1000,
         'execute_flat' => median_ns(static fn () => Webonyx::executeQuery($webonyx, $wFlat)->toArray()) / 1000,
     ];
+
+    // Fresh loader per iteration, exactly like run.php's per-request DataLoader.
+    $customersById = [];
+    foreach (make_users(20) as $customer) {
+        $customersById[$customer['id']] = $customer;
+    }
+
+    // Heavier executions use fewer iterations (median stays stable) so the whole
+    // sweep — CI included — finishes quickly.
     $scalingWebonyxMs = [
-        'execute_list_100' => median_ns(static fn () => Webonyx::executeQuery($webonyx, $wList100)->toArray()) / 1_000_000,
-        'execute_list_1000' => median_ns(static fn () => Webonyx::executeQuery($webonyx, $wList1000)->toArray()) / 1_000_000,
+        'execute_list_100' => median_ns(static fn () => Webonyx::executeQuery($webonyx, $wList100)->toArray(), 200) / 1_000_000,
+        'execute_list_1000' => median_ns(static fn () => Webonyx::executeQuery($webonyx, $wList1000)->toArray(), 120) / 1_000_000,
+        'execute_nested_500' => median_ns(static fn () => Webonyx::executeQuery(
+            $webonyx,
+            $wNested,
+            null,
+            new WebonyxUserLoader($customersById),
+        )->toArray(), 120) / 1_000_000,
+        'full_100' => median_ns(static function () use ($webonyx, $list100): void {
+            $doc = WebonyxParser::parse($list100);
+            WebonyxValidator::validate($webonyx, $doc);
+            Webonyx::executeQuery($webonyx, $doc)->toArray();
+        }, 200) / 1_000_000,
     ];
 
     if ($jsonPath !== null) {
