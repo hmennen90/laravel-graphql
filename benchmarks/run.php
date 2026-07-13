@@ -14,6 +14,12 @@ declare(strict_types=1);
  *   php benchmarks/run.php --json                machine-readable JSON to stdout
  *   php benchmarks/run.php --json=path.json      write JSON to a file (table still printed)
  *   php benchmarks/run.php --json=path.json --version=1.5.0
+ *   php benchmarks/run.php --json=path.json --version=1.5.0 --update-history
+ *
+ * By default the `history` (performance-over-releases) block is preserved verbatim —
+ * it is a fixed same-machine backfill (see benchmarks/measure-history.sh), so CI must
+ * not append this runner's hardware to it. Pass --update-history only for a deliberate,
+ * one-machine re-measurement.
  *
  * The table and the JSON are fed by the *same* benchmark run, so the published numbers
  * can never drift from what the harness measured.
@@ -38,6 +44,7 @@ require __DIR__.'/../vendor/autoload.php';
 
 $emitJson = false;
 $jsonPath = null;
+$updateHistory = false;
 $version = getenv('BENCH_VERSION') !== false ? (string) getenv('BENCH_VERSION') : 'dev';
 foreach (array_slice($argv, 1) as $arg) {
     if ($arg === '--json') {
@@ -47,6 +54,8 @@ foreach (array_slice($argv, 1) as $arg) {
         $jsonPath = substr($arg, 7);
     } elseif (str_starts_with($arg, '--version=')) {
         $version = substr($arg, 10);
+    } elseif ($arg === '--update-history') {
+        $updateHistory = true;
     }
 }
 
@@ -273,9 +282,11 @@ if ($emitJson) {
         }
     }
 
-    // Preserve/append the performance-over-releases series. If the target file
-    // already carries a history, upsert the entry for this version so the
-    // dashboard's release trend accumulates instead of resetting each run.
+    // The performance-over-releases series is a fixed, SAME-MACHINE backfill (a
+    // cross-release trend is only meaningful on one machine — mixing this runner's
+    // hardware into it would be misleading). So it is preserved verbatim from the
+    // existing file and only rewritten when --update-history is passed explicitly
+    // (a deliberate, one-machine re-measurement — see benchmarks/measure-history.sh).
     $history = [];
     if ($jsonPath !== null && is_file($jsonPath)) {
         /** @var array<string, mixed> $existing */
@@ -288,7 +299,9 @@ if ($emitJson) {
             }
         }
     }
-    $history[$version] = $fullQuery100Ms;
+    if ($updateHistory) {
+        $history[$version] = $fullQuery100Ms;
+    }
     $historyList = [];
     foreach ($history as $v => $ms) {
         $historyList[] = ['version' => $v, 'fullQuery100Ms' => $ms];
