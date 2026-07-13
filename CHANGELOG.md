@@ -1,3 +1,9 @@
+## [1.7.0](https://github.com/hmennen90/laravel-graphql/compare/v1.6.0...v1.7.0) (2026-07-13)
+
+### Features
+
+* **bench:** real measured webonyx comparison in the dashboard ([#2](https://github.com/hmennen90/laravel-graphql/issues/2)) ([ccbd341](https://github.com/hmennen90/laravel-graphql/commit/ccbd341c385952bc46bd182a88f9260368104d17))
+
 ## [1.6.0](https://github.com/hmennen90/laravel-graphql/compare/v1.5.0...v1.6.0) (2026-07-13)
 
 ### Features
