@@ -25,6 +25,7 @@ use GraphQL\Type\Definition\ObjectType as WebonyxObjectType;
 use GraphQL\Type\Definition\Type as WebonyxType;
 use GraphQL\Type\Schema as WebonyxSchema;
 use GraphQL\Type\SchemaConfig as WebonyxSchemaConfig;
+use GraphQL\Utils\BuildSchema as WebonyxBuildSchema;
 use GraphQL\Validator\DocumentValidator as WebonyxValidator;
 use Hmennen90\GraphQL\Engine\Executor\Executor;
 use Hmennen90\GraphQL\Engine\Language\Parser;
@@ -87,9 +88,11 @@ function make_users(int $n): array
     return $users;
 }
 
+// Identical SDL to benchmarks/run.php so every per-phase overlay is apples-to-apples.
 $sdl = <<<'GRAPHQL'
-type Query { hello: String users(count: Int): [User!]! }
+type Query { hello: String users(count: Int): [User!]! orders(count: Int): [Order!]! }
 type User { id: ID! name: String email: String active: Boolean }
+type Order { id: ID! total: Int customer: User }
 GRAPHQL;
 
 // --- our engine ---
@@ -97,6 +100,7 @@ $ours = SchemaBuilder::fromSdl($sdl, resolvers: [
     'Query' => [
         'hello' => static fn (): string => 'world',
         'users' => static fn ($r, array $a) => make_users(is_int($a['count'] ?? null) ? $a['count'] : 100),
+        'orders' => static fn ($r, array $a) => [],
     ],
 ]);
 
@@ -110,6 +114,14 @@ $wUser = new WebonyxObjectType([
         'active' => WebonyxType::boolean(),
     ],
 ]);
+$wOrder = new WebonyxObjectType([
+    'name' => 'Order',
+    'fields' => [
+        'id' => WebonyxType::nonNull(WebonyxType::id()),
+        'total' => WebonyxType::int(),
+        'customer' => ['type' => $wUser, 'resolve' => static fn () => null],
+    ],
+]);
 $wQuery = new WebonyxObjectType([
     'name' => 'Query',
     'fields' => [
@@ -119,11 +131,17 @@ $wQuery = new WebonyxObjectType([
             'args' => ['count' => WebonyxType::int()],
             'resolve' => static fn ($r, array $a) => make_users(is_int($a['count'] ?? null) ? $a['count'] : 100),
         ],
+        'orders' => [
+            'type' => WebonyxType::nonNull(WebonyxType::listOf(WebonyxType::nonNull($wOrder))),
+            'args' => ['count' => WebonyxType::int()],
+            'resolve' => static fn ($r, array $a) => [],
+        ],
     ],
 ]);
 $webonyx = new WebonyxSchema(new WebonyxSchemaConfig()->setQuery($wQuery));
 
 $flat = '{ hello }';
+$nested = '{ orders(count: 500) { id total customer { name email } } }';
 $list100 = '{ users(count: 100) { id name email active } }';
 $list1000 = '{ users(count: 1000) { id name email active } }';
 
@@ -131,6 +149,7 @@ $oursFlat = Parser::parse($flat);
 $oursList100 = Parser::parse($list100);
 $oursList1000 = Parser::parse($list1000);
 $wFlat = WebonyxParser::parse($flat);
+$wNested = WebonyxParser::parse($nested);
 $wList100 = WebonyxParser::parse($list100);
 $wList1000 = WebonyxParser::parse($list1000);
 
@@ -193,12 +212,47 @@ if ($emitJson) {
         ], $measured),
     ];
 
+    // Per-phase / per-scenario webonyx overlays, keyed by the same ids run.php emits,
+    // so the dashboard can draw a webonyx series next to ours in every chart that has
+    // a fair equivalent. Scenarios with no honest webonyx counterpart (the DataLoader
+    // batch, the full pipeline) are deliberately omitted rather than faked.
+    $phaseWebonyxUs = [
+        'parse_small' => median_ns(static fn () => WebonyxParser::parse($flat)) / 1000,
+        'parse_nested' => median_ns(static fn () => WebonyxParser::parse($nested)) / 1000,
+        'build_schema' => median_ns(static fn () => WebonyxBuildSchema::build($sdl)) / 1000,
+        'validate_nested' => median_ns(static fn () => WebonyxValidator::validate($webonyx, $wNested)) / 1000,
+        'execute_flat' => median_ns(static fn () => Webonyx::executeQuery($webonyx, $wFlat)->toArray()) / 1000,
+    ];
+    $scalingWebonyxMs = [
+        'execute_list_100' => median_ns(static fn () => Webonyx::executeQuery($webonyx, $wList100)->toArray()) / 1_000_000,
+        'execute_list_1000' => median_ns(static fn () => Webonyx::executeQuery($webonyx, $wList1000)->toArray()) / 1_000_000,
+    ];
+
     if ($jsonPath !== null) {
-        // Merge into an existing benchmarks.json, replacing only `comparison`.
+        // Merge into an existing benchmarks.json: replace `comparison` and add a
+        // webonyx value onto every phase/scaling entry that has a measured counterpart.
         $doc = [];
         if (is_file($jsonPath)) {
             /** @var array<string, mixed> $doc */
             $doc = json_decode((string) file_get_contents($jsonPath), true) ?: [];
+        }
+        if (isset($doc['phases']) && is_array($doc['phases'])) {
+            foreach ($doc['phases'] as &$phase) {
+                $id = $phase['id'] ?? null;
+                if (is_string($id) && isset($phaseWebonyxUs[$id])) {
+                    $phase['webonyxUs'] = round($phaseWebonyxUs[$id], 2);
+                }
+            }
+            unset($phase);
+        }
+        if (isset($doc['scaling']) && is_array($doc['scaling'])) {
+            foreach ($doc['scaling'] as &$scale) {
+                $id = $scale['id'] ?? null;
+                if (is_string($id) && isset($scalingWebonyxMs[$id])) {
+                    $scale['webonyxMs'] = round($scalingWebonyxMs[$id], 4);
+                }
+            }
+            unset($scale);
         }
         $doc['comparison'] = $comparison;
         file_put_contents(

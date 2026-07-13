@@ -121,7 +121,7 @@
 
       <section class="card">
         <h2>Performance over releases</h2>
-        <p class="desc">Full parse+validate+execute of a 100-object query (ms) per released version.</p>
+        <p class="desc">Full parse+validate+execute of a 100-object query (ms) per released version &mdash; a fixed same-machine backfill (engine-only). The drop at 1.2.1 is the executor rewrite (inline synchronous completion).</p>
         <div class="chart-wrap"><canvas id="history"></canvas></div>
       </section>
     </div>
@@ -139,37 +139,149 @@
   // if the network request errors. CI overwrites benchmarks.json, not this.
   //---------------------------------------------------------------------------
   const FALLBACK_DATA = {
-    "meta": { "generatedAt": "", "version": "1.5.0", "php": "8.4", "jit": false, "machine": "Darwin arm64", "note": "Embedded fallback data (fetch unavailable). Median over many iterations; numbers are machine-specific." },
+    "meta": {
+      "generatedAt": "2026-07-13T09:05:41+00:00",
+      "version": "1.7.0",
+      "php": "8.4",
+      "jit": false,
+      "machine": "Darwin arm64",
+      "note": "Embedded fallback (fetch unavailable). Mirrors benchmarks.json; CI overwrites the live file, not this copy."
+    },
     "phases": [
-      { "id": "parse_small", "label": "parse: small query", "medianUs": 6.21, "throughputPerSec": 161057 },
-      { "id": "parse_nested", "label": "parse: nested query", "medianUs": 24.92, "throughputPerSec": 40135 },
-      { "id": "build_schema", "label": "build: schema from SDL", "medianUs": 98.21, "throughputPerSec": 10182 },
-      { "id": "validate_nested", "label": "validate: nested query", "medianUs": 7.21, "throughputPerSec": 138715 },
-      { "id": "execute_flat", "label": "execute: flat field", "medianUs": 2.21, "throughputPerSec": 452899 }
+      {
+        "id": "parse_small",
+        "label": "parse: small query",
+        "medianUs": 6.33,
+        "throughputPerSec": 157903,
+        "webonyxUs": 8.83
+      },
+      {
+        "id": "parse_nested",
+        "label": "parse: nested query",
+        "medianUs": 24.88,
+        "throughputPerSec": 40201,
+        "webonyxUs": 40
+      },
+      {
+        "id": "build_schema",
+        "label": "build: schema from SDL",
+        "medianUs": 99.5,
+        "throughputPerSec": 10050,
+        "webonyxUs": 416.33
+      },
+      {
+        "id": "validate_nested",
+        "label": "validate: nested query",
+        "medianUs": 7.17,
+        "throughputPerSec": 139528,
+        "webonyxUs": 241.42
+      },
+      {
+        "id": "execute_flat",
+        "label": "execute: flat field",
+        "medianUs": 2.25,
+        "throughputPerSec": 444444,
+        "webonyxUs": 93.42
+      }
     ],
     "scaling": [
-      { "id": "execute_list_100", "label": "execute: list of 100", "medianMs": 0.644, "throughputPerSec": 1554, "objects": 100 },
-      { "id": "execute_list_1000", "label": "execute: list of 1000", "medianMs": 6.434, "throughputPerSec": 155, "objects": 1000 },
-      { "id": "execute_nested_500", "label": "execute: 500 nested + DataLoader", "medianMs": 7.957, "throughputPerSec": 126, "objects": 500 },
-      { "id": "full_100", "label": "full: parse+validate+execute (100)", "medianMs": 0.679, "throughputPerSec": 1472, "objects": 100 }
+      {
+        "id": "execute_list_100",
+        "label": "execute: list of 100",
+        "medianMs": 0.642,
+        "throughputPerSec": 1557,
+        "objects": 100,
+        "webonyxMs": 1.3634
+      },
+      {
+        "id": "execute_list_1000",
+        "label": "execute: list of 1000",
+        "medianMs": 6.431,
+        "throughputPerSec": 156,
+        "objects": 1000,
+        "webonyxMs": 11.4648
+      },
+      {
+        "id": "execute_nested_500",
+        "label": "execute: 500 nested + DataLoader",
+        "medianMs": 8.015,
+        "throughputPerSec": 125,
+        "objects": 500
+      },
+      {
+        "id": "full_100",
+        "label": "full: parse+validate+execute (100)",
+        "medianMs": 0.684,
+        "throughputPerSec": 1462,
+        "objects": 100
+      }
     ],
     "comparison": {
-      "note": "Measured engine-to-engine on one machine (webonyx/graphql-php v15.34.0): identical SDL and in-memory data, isolating raw execution. See docs/benchmarks.md for caveats.",
+      "note": "Measured engine-to-engine on one machine (webonyx/graphql-php v15.34.0): identical SDL and in-memory data, isolating raw execution — no Laravel/Eloquent/HTTP layer. See docs/benchmarks.md \"Versus webonyx/graphql-php\" for the method and caveats.",
       "unit": "ms",
       "measured": true,
       "comparedVersion": "v15.34.0",
       "scenarios": [
-        { "label": "parse: list query", "thisEngineMs": 0.0208, "webonyxMs": 0.033 },
-        { "label": "validate: list query", "thisEngineMs": 0.006, "webonyxMs": 0.207 },
-        { "label": "execute: flat field", "thisEngineMs": 0.0023, "webonyxMs": 0.0929 },
-        { "label": "execute: list of 100", "thisEngineMs": 0.6501, "webonyxMs": 1.3796 },
-        { "label": "execute: list of 1000", "thisEngineMs": 6.4372, "webonyxMs": 11.6055 }
+        {
+          "label": "parse: list query",
+          "thisEngineMs": 0.0211,
+          "webonyxMs": 0.0335
+        },
+        {
+          "label": "validate: list query",
+          "thisEngineMs": 0.0061,
+          "webonyxMs": 0.2075
+        },
+        {
+          "label": "execute: flat field",
+          "thisEngineMs": 0.0022,
+          "webonyxMs": 0.0942
+        },
+        {
+          "label": "execute: list of 100",
+          "thisEngineMs": 0.6433,
+          "webonyxMs": 1.366
+        },
+        {
+          "label": "execute: list of 1000",
+          "thisEngineMs": 6.42,
+          "webonyxMs": 11.5097
+        }
       ]
     },
     "history": [
-      { "version": "1.3.0", "fullQuery100Ms": 3.9 },
-      { "version": "1.4.0", "fullQuery100Ms": 0.71 },
-      { "version": "1.5.0", "fullQuery100Ms": 0.679 }
+      {
+        "version": "1.1.0",
+        "fullQuery100Ms": 2.43
+      },
+      {
+        "version": "1.2.0",
+        "fullQuery100Ms": 2.41
+      },
+      {
+        "version": "1.2.1",
+        "fullQuery100Ms": 0.682
+      },
+      {
+        "version": "1.3.0",
+        "fullQuery100Ms": 0.697
+      },
+      {
+        "version": "1.4.0",
+        "fullQuery100Ms": 0.68
+      },
+      {
+        "version": "1.5.0",
+        "fullQuery100Ms": 0.68
+      },
+      {
+        "version": "1.6.0",
+        "fullQuery100Ms": 0.679
+      },
+      {
+        "version": "1.7.0",
+        "fullQuery100Ms": 0.679
+      }
     ]
   };
 
@@ -253,62 +365,92 @@
     ].filter(([, v]) => v != null && v !== '')
      .map(([k, v]) => '<span><b>' + k + ':</b> ' + v + '</span>').join('');
 
+    // Shared webonyx-overlay context, honest about whether it was measured.
+    const cmpMeta = data.comparison || {};
+    const wxMeasured = cmpMeta.measured === true;
+    const wxVersion = cmpMeta.comparedVersion ? ' ' + cmpMeta.comparedVersion : '';
+    const webonyxSeriesLabel = 'webonyx' + wxVersion + (wxMeasured ? '' : ' (illustrative)');
+    const phaseHasWx = data.phases.some(p => p.webonyxUs != null);
+
     // 1. Per-phase latency (log µs)
     charts.push(new Chart(document.getElementById('phaseLatency'), {
       type: 'bar',
       data: {
         labels: data.phases.map(p => p.label),
-        datasets: [{ label: 'median (µs)', data: data.phases.map(p => p.medianUs),
-          backgroundColor: c.accent, borderRadius: 4 }],
+        datasets: [
+          { label: 'this engine (µs)', data: data.phases.map(p => p.medianUs),
+            backgroundColor: c.accent, borderRadius: 4 },
+          ...(phaseHasWx ? [{ label: webonyxSeriesLabel + ' (µs)', data: data.phases.map(p => p.webonyxUs ?? null),
+            backgroundColor: c.muted, borderRadius: 4 }] : []),
+        ],
       },
       options: baseOpts(c, { indexAxis: 'y',
         scales: { x: { type: 'logarithmic', ticks: { color: c.muted, font: { size: 10 } }, grid: { color: c.grid } },
                   y: { ticks: { color: c.muted, font: { size: 10 } }, grid: { color: c.grid } } },
-        plugins: { legend: { display: false } } }),
+        plugins: { legend: { display: phaseHasWx, labels: { color: c.text, boxWidth: 12, font: { size: 11 } } } } }),
     }));
 
-    // 2. Per-phase throughput (log ops/s)
+    // 2. Per-phase throughput (log ops/s). webonyx ops/s derived from its median µs.
     charts.push(new Chart(document.getElementById('phaseThroughput'), {
       type: 'bar',
       data: {
         labels: data.phases.map(p => p.label),
-        datasets: [{ label: 'ops / sec', data: data.phases.map(p => p.throughputPerSec),
-          backgroundColor: c.accent2, borderRadius: 4 }],
+        datasets: [
+          { label: 'this engine (ops/s)', data: data.phases.map(p => p.throughputPerSec),
+            backgroundColor: c.accent2, borderRadius: 4 },
+          ...(phaseHasWx ? [{ label: webonyxSeriesLabel + ' (ops/s)',
+            data: data.phases.map(p => p.webonyxUs ? Math.round(1e6 / p.webonyxUs) : null),
+            backgroundColor: c.muted, borderRadius: 4 }] : []),
+        ],
       },
       options: baseOpts(c, { indexAxis: 'y',
         scales: { x: { type: 'logarithmic', ticks: { color: c.muted, font: { size: 10 } }, grid: { color: c.grid } },
                   y: { ticks: { color: c.muted, font: { size: 10 } }, grid: { color: c.grid } } },
-        plugins: { legend: { display: false } } }),
+        plugins: { legend: { display: phaseHasWx, labels: { color: c.text, boxWidth: 12, font: { size: 11 } } } } }),
     }));
 
-    // 3. Execution scaling (ms bars)
+    // 3. Execution scaling (ms bars). webonyx bar only where a fair equivalent exists.
+    const scaleHasWx = data.scaling.some(s => s.webonyxMs != null);
     charts.push(new Chart(document.getElementById('scaling'), {
       type: 'bar',
       data: {
         labels: data.scaling.map(s => s.label),
-        datasets: [{ label: 'median (ms)', data: data.scaling.map(s => s.medianMs),
-          backgroundColor: c.accent, borderRadius: 4 }],
+        datasets: [
+          { label: 'this engine (ms)', data: data.scaling.map(s => s.medianMs),
+            backgroundColor: c.accent, borderRadius: 4 },
+          ...(scaleHasWx ? [{ label: webonyxSeriesLabel + ' (ms)', data: data.scaling.map(s => s.webonyxMs ?? null),
+            backgroundColor: c.muted, borderRadius: 4 }] : []),
+        ],
       },
-      options: baseOpts(c, { plugins: { legend: { display: false } } }),
+      options: baseOpts(c, { plugins: { legend: { display: scaleHasWx, labels: { color: c.text, boxWidth: 12, font: { size: 11 } } } } }),
     }));
 
     // 4. Latency per object (line, linearity) — pure list executes, origin-anchored.
+    // A flat per-object line = linear scaling; webonyx overlaid shows a higher constant.
     const lists = data.scaling.filter(s => /list/.test(s.id)).sort((a, b) => a.objects - b.objects);
+    const perObj = (ms, objects) => ms == null ? null : +(ms * 1000 / objects).toFixed(2);
+    const listsHaveWx = lists.some(s => s.webonyxMs != null);
     charts.push(new Chart(document.getElementById('perObject'), {
       type: 'line',
       data: {
         labels: ['0', ...lists.map(s => String(s.objects))],
         datasets: [
-          { label: 'total (ms)', data: [0, ...lists.map(s => s.medianMs)],
+          { label: 'this engine — total (ms)', data: [0, ...lists.map(s => s.medianMs)],
             borderColor: c.accent, backgroundColor: c.accent, tension: 0, yAxisID: 'y' },
-          { label: 'per object (µs)', data: [null, ...lists.map(s => +(s.medianMs * 1000 / s.objects).toFixed(2))],
-            borderColor: c.accent2, backgroundColor: c.accent2, borderDash: [5, 4], tension: 0, yAxisID: 'y1' },
+          { label: 'this engine — µs/object', data: [null, ...lists.map(s => perObj(s.medianMs, s.objects))],
+            borderColor: c.accent, backgroundColor: c.accent, borderDash: [5, 4], tension: 0, yAxisID: 'y1' },
+          ...(listsHaveWx ? [
+            { label: webonyxSeriesLabel + ' — total (ms)', data: [0, ...lists.map(s => s.webonyxMs ?? null)],
+              borderColor: c.muted, backgroundColor: c.muted, tension: 0, yAxisID: 'y' },
+            { label: webonyxSeriesLabel + ' — µs/object', data: [null, ...lists.map(s => perObj(s.webonyxMs, s.objects))],
+              borderColor: c.muted, backgroundColor: c.muted, borderDash: [5, 4], tension: 0, yAxisID: 'y1' },
+          ] : []),
         ],
       },
       options: baseOpts(c, {
         scales: {
           x: { title: { display: true, text: 'objects resolved', color: c.muted }, ticks: { color: c.muted }, grid: { color: c.grid } },
-          y: { position: 'left', title: { display: true, text: 'ms', color: c.muted }, ticks: { color: c.muted }, grid: { color: c.grid } },
+          y: { position: 'left', beginAtZero: true, title: { display: true, text: 'ms', color: c.muted }, ticks: { color: c.muted }, grid: { color: c.grid } },
           y1: { position: 'right', beginAtZero: true, title: { display: true, text: 'µs/object', color: c.muted }, ticks: { color: c.muted }, grid: { drawOnChartArea: false } },
         },
       }),
