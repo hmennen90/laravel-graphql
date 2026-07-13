@@ -1,3 +1,9 @@
+## [1.10.0](https://github.com/hmennen90/laravel-graphql/compare/v1.9.0...v1.10.0) (2026-07-13)
+
+### Features
+
+* **bench:** webonyx baseline on the release chart; generate all data in one CI run ([#5](https://github.com/hmennen90/laravel-graphql/issues/5)) ([61687fc](https://github.com/hmennen90/laravel-graphql/commit/61687fcf2ac338b9d8c9d2f1ca3af3220756cb3e))
+
 ## [1.9.0](https://github.com/hmennen90/laravel-graphql/compare/v1.8.0...v1.9.0) (2026-07-13)
 
 ### Features
