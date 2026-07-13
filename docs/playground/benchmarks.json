@@ -1,7 +1,7 @@
 {
     "meta": {
-        "generatedAt": "2026-07-13T07:59:50+00:00",
-        "version": "1.5.0",
+        "generatedAt": "2026-07-13T08:31:15+00:00",
+        "version": "1.6.0",
         "php": "8.4",
         "jit": false,
         "machine": "Darwin arm64",
@@ -11,92 +11,94 @@
         {
             "id": "parse_small",
             "label": "parse: small query",
-            "medianUs": 6.21,
-            "throughputPerSec": 161057
+            "medianUs": 6.67,
+            "throughputPerSec": 150015
         },
         {
             "id": "parse_nested",
             "label": "parse: nested query",
-            "medianUs": 24.92,
-            "throughputPerSec": 40135
+            "medianUs": 26.46,
+            "throughputPerSec": 37796
         },
         {
             "id": "build_schema",
             "label": "build: schema from SDL",
-            "medianUs": 98.21,
-            "throughputPerSec": 10182
+            "medianUs": 106.04,
+            "throughputPerSec": 9430
         },
         {
             "id": "validate_nested",
             "label": "validate: nested query",
-            "medianUs": 7.21,
-            "throughputPerSec": 138715
+            "medianUs": 7.46,
+            "throughputPerSec": 134084
         },
         {
             "id": "execute_flat",
             "label": "execute: flat field",
-            "medianUs": 2.21,
-            "throughputPerSec": 452899
+            "medianUs": 2.29,
+            "throughputPerSec": 436300
         }
     ],
     "scaling": [
         {
             "id": "execute_list_100",
             "label": "execute: list of 100",
-            "medianMs": 0.644,
-            "throughputPerSec": 1554,
+            "medianMs": 0.688,
+            "throughputPerSec": 1453,
             "objects": 100
         },
         {
             "id": "execute_list_1000",
             "label": "execute: list of 1000",
-            "medianMs": 6.434,
+            "medianMs": 6.458,
             "throughputPerSec": 155,
             "objects": 1000
         },
         {
             "id": "execute_nested_500",
             "label": "execute: 500 nested + DataLoader",
-            "medianMs": 7.957,
-            "throughputPerSec": 126,
+            "medianMs": 8.105,
+            "throughputPerSec": 123,
             "objects": 500
         },
         {
             "id": "full_100",
             "label": "full: parse+validate+execute (100)",
             "medianMs": 0.679,
-            "throughputPerSec": 1472,
+            "throughputPerSec": 1473,
             "objects": 100
         }
     ],
     "comparison": {
-        "note": "ILLUSTRATIVE PLACEHOLDER — the webonyx series is not yet measured on this runner. See docs/benchmarks.md \"Versus webonyx/graphql-php\" for the real engine-to-engine method.",
+        "note": "Measured engine-to-engine on one machine (webonyx/graphql-php v15.34.0): identical SDL and in-memory data, isolating raw execution — no Laravel/Eloquent/HTTP layer. See docs/benchmarks.md \"Versus webonyx/graphql-php\" for the method and caveats.",
         "unit": "ms",
+        "measured": true,
+        "comparedVersion": "v15.34.0",
         "scenarios": [
             {
                 "label": "parse: list query",
-                "thisEngineMs": 0.021,
+                "thisEngineMs": 0.0208,
                 "webonyxMs": 0.033
             },
             {
                 "label": "validate: list query",
                 "thisEngineMs": 0.006,
-                "webonyxMs": 0.208
+                "webonyxMs": 0.207
             },
             {
                 "label": "execute: flat field",
-                "thisEngineMs": 0.002,
-                "webonyxMs": 0.094
+                "thisEngineMs": 0.0023,
+                "webonyxMs": 0.0929
             },
             {
                 "label": "execute: list of 100",
-                "thisEngineMs": 0.65,
-                "webonyxMs": 1.4
+                "thisEngineMs": 0.6501,
+                "webonyxMs": 1.3796
             },
             {
                 "label": "execute: list of 1000",
-                "thisEngineMs": 6.4,
-                "webonyxMs": 11.5
+                "thisEngineMs": 6.4372,
+                "webonyxMs": 11.6055
             }
         ]
     },
@@ -111,6 +113,10 @@
         },
         {
             "version": "1.5.0",
+            "fullQuery100Ms": 0.679
+        },
+        {
+            "version": "1.6.0",
             "fullQuery100Ms": 0.679
         }
     ]

@@ -46,6 +46,14 @@ jobs:
           VERSION="$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')"
           composer bench -- --json=docs/playground/benchmarks.json --version="${VERSION:-dev}"
 
+      - name: Measure real webonyx comparison (dev-only, same runner)
+        # Install webonyx ephemerally (not a committed dependency) and overwrite the
+        # comparison block with measured, same-hardware numbers — so the dashboard
+        # shows a real engine-to-engine result rather than an illustrative placeholder.
+        run: |
+          composer require --dev --no-interaction --no-progress webonyx/graphql-php
+          composer bench:vs -- --json=docs/playground/benchmarks.json
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'

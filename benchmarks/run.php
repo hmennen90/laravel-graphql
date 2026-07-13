@@ -306,8 +306,12 @@ if ($emitJson) {
         'phases' => $phases,
         'scaling' => $scaling,
         'comparison' => [
-            'note' => 'ILLUSTRATIVE PLACEHOLDER — the webonyx series is not yet measured on this runner. See docs/benchmarks.md "Versus webonyx/graphql-php" for the real engine-to-engine method.',
+            'note' => 'ILLUSTRATIVE PLACEHOLDER — the webonyx series is not yet measured on this runner. '
+                .'Run benchmarks/vs-webonyx.php --json=<this file> (with webonyx installed) to replace it '
+                .'with measured, same-hardware numbers. See docs/benchmarks.md "Versus webonyx/graphql-php".',
             'unit' => 'ms',
+            'measured' => false,
+            'comparedVersion' => null,
             'scenarios' => [
                 ['label' => 'parse: list query', 'thisEngineMs' => 0.021, 'webonyxMs' => 0.033],
                 ['label' => 'validate: list query', 'thisEngineMs' => 0.006, 'webonyxMs' => 0.208],

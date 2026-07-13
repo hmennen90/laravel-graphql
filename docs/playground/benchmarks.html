@@ -115,7 +115,7 @@
 
       <section class="card">
         <h2>Engine-to-engine comparison</h2>
-        <p class="desc">This engine vs webonyx/graphql-php (ms, lower is better).</p>
+        <p class="desc" id="comparisonDesc">This engine vs webonyx/graphql-php (ms, lower is better).</p>
         <div class="chart-wrap"><canvas id="comparison"></canvas></div>
       </section>
 
@@ -154,14 +154,16 @@
       { "id": "full_100", "label": "full: parse+validate+execute (100)", "medianMs": 0.679, "throughputPerSec": 1472, "objects": 100 }
     ],
     "comparison": {
-      "note": "ILLUSTRATIVE PLACEHOLDER — webonyx series not yet measured on this runner.",
+      "note": "Measured engine-to-engine on one machine (webonyx/graphql-php v15.34.0): identical SDL and in-memory data, isolating raw execution. See docs/benchmarks.md for caveats.",
       "unit": "ms",
+      "measured": true,
+      "comparedVersion": "v15.34.0",
       "scenarios": [
-        { "label": "parse: list query", "thisEngineMs": 0.021, "webonyxMs": 0.033 },
-        { "label": "validate: list query", "thisEngineMs": 0.006, "webonyxMs": 0.208 },
-        { "label": "execute: flat field", "thisEngineMs": 0.002, "webonyxMs": 0.094 },
-        { "label": "execute: list of 100", "thisEngineMs": 0.65, "webonyxMs": 1.4 },
-        { "label": "execute: list of 1000", "thisEngineMs": 6.4, "webonyxMs": 11.5 }
+        { "label": "parse: list query", "thisEngineMs": 0.0208, "webonyxMs": 0.033 },
+        { "label": "validate: list query", "thisEngineMs": 0.006, "webonyxMs": 0.207 },
+        { "label": "execute: flat field", "thisEngineMs": 0.0023, "webonyxMs": 0.0929 },
+        { "label": "execute: list of 100", "thisEngineMs": 0.6501, "webonyxMs": 1.3796 },
+        { "label": "execute: list of 1000", "thisEngineMs": 6.4372, "webonyxMs": 11.6055 }
       ]
     },
     "history": [
@@ -312,8 +314,19 @@
       }),
     }));
 
-    // 5. Engine-to-engine comparison (grouped bars)
-    const cmp = data.comparison || { scenarios: [] };
+    // 5. Engine-to-engine comparison (grouped bars). Legend, description and
+    // tooltip all follow comparison.measured, so the page can never claim the
+    // webonyx series is real when it is only an illustrative placeholder.
+    const cmp = data.comparison || { scenarios: [], measured: false };
+    const measured = cmp.measured === true;
+    const version = cmp.comparedVersion ? ' ' + cmp.comparedVersion : '';
+    const webonyxLabel = measured ? ('webonyx' + version + ' (measured)') : 'webonyx — illustrative*';
+    const desc = document.getElementById('comparisonDesc');
+    if (desc) {
+      desc.textContent = measured
+        ? 'This engine vs webonyx/graphql-php' + version + ' (ms, lower is better) — measured on the same runner, engine-only.'
+        : 'This engine vs webonyx/graphql-php (ms, lower is better). The webonyx series is an illustrative placeholder until measured.';
+    }
     charts.push(new Chart(document.getElementById('comparison'), {
       type: 'bar',
       data: {
@@ -321,7 +334,7 @@
         datasets: [
           { label: 'this engine (' + (cmp.unit || 'ms') + ')', data: cmp.scenarios.map(s => s.thisEngineMs),
             backgroundColor: c.accent, borderRadius: 4 },
-          { label: 'webonyx — illustrative*', data: cmp.scenarios.map(s => s.webonyxMs),
+          { label: webonyxLabel, data: cmp.scenarios.map(s => s.webonyxMs),
             backgroundColor: c.muted, borderRadius: 4 },
         ],
       },
@@ -330,7 +343,9 @@
                   y: { type: 'logarithmic', ticks: { color: c.muted, font: { size: 10 } }, grid: { color: c.grid } } },
         plugins: {
           legend: { labels: { color: c.text, boxWidth: 12, font: { size: 11 } } },
-          tooltip: { callbacks: { footer: () => '* webonyx series is an illustrative placeholder until measured.' } },
+          tooltip: { callbacks: { footer: () => measured
+            ? 'Engine-only, one machine, in-memory data. See docs/benchmarks.md for caveats.'
+            : '* webonyx series is an illustrative placeholder until measured.' } },
         },
       }),
     }));
