@@ -6,6 +6,8 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'benchmarks/**'
+      - 'src/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -24,6 +26,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # tags needed so `git describe` can stamp the released version
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Regenerate benchmark JSON (single source of truth for the dashboard)
+        # One code path feeds both the human table and the JSON, so the published
+        # numbers can't drift. --version stamps the released tag into meta + history.
+        run: |
+          VERSION="$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')"
+          composer bench -- --json=docs/playground/benchmarks.json --version="${VERSION:-dev}"
 
       - uses: actions/setup-python@v5
         with:
@@ -34,6 +55,13 @@ jobs:
 
       - name: Build site
         run: mkdocs build --strict
+
+      - name: Verify playground assets are published
+        run: |
+          test -f site/playground/playground.html
+          test -f site/playground/benchmarks.html
+          test -f site/playground/benchmarks.json
+          python3 -c "import json; json.load(open('site/playground/benchmarks.json'))"
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

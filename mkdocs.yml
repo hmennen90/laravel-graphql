@@ -52,6 +52,8 @@ nav:
   - Validation & Sanitisers: validation.md
   - Apollo Federation: federation.md
   - Benchmarks: benchmarks.md
+  - Benchmark Dashboard: playground/benchmarks.html
+  - Live Playground: playground/playground.html
   - Spec Conformance: conformance.md
   - Comparison: comparison.md
   - Migrating from Lighthouse: migrating-from-lighthouse.md

@@ -1,0 +1,117 @@
+{
+    "meta": {
+        "generatedAt": "2026-07-13T07:59:50+00:00",
+        "version": "1.5.0",
+        "php": "8.4",
+        "jit": false,
+        "machine": "Darwin arm64",
+        "note": "Median over many iterations; numbers are machine-specific. The shape (per-phase cost, linear scaling) is what matters."
+    },
+    "phases": [
+        {
+            "id": "parse_small",
+            "label": "parse: small query",
+            "medianUs": 6.21,
+            "throughputPerSec": 161057
+        },
+        {
+            "id": "parse_nested",
+            "label": "parse: nested query",
+            "medianUs": 24.92,
+            "throughputPerSec": 40135
+        },
+        {
+            "id": "build_schema",
+            "label": "build: schema from SDL",
+            "medianUs": 98.21,
+            "throughputPerSec": 10182
+        },
+        {
+            "id": "validate_nested",
+            "label": "validate: nested query",
+            "medianUs": 7.21,
+            "throughputPerSec": 138715
+        },
+        {
+            "id": "execute_flat",
+            "label": "execute: flat field",
+            "medianUs": 2.21,
+            "throughputPerSec": 452899
+        }
+    ],
+    "scaling": [
+        {
+            "id": "execute_list_100",
+            "label": "execute: list of 100",
+            "medianMs": 0.644,
+            "throughputPerSec": 1554,
+            "objects": 100
+        },
+        {
+            "id": "execute_list_1000",
+            "label": "execute: list of 1000",
+            "medianMs": 6.434,
+            "throughputPerSec": 155,
+            "objects": 1000
+        },
+        {
+            "id": "execute_nested_500",
+            "label": "execute: 500 nested + DataLoader",
+            "medianMs": 7.957,
+            "throughputPerSec": 126,
+            "objects": 500
+        },
+        {
+            "id": "full_100",
+            "label": "full: parse+validate+execute (100)",
+            "medianMs": 0.679,
+            "throughputPerSec": 1472,
+            "objects": 100
+        }
+    ],
+    "comparison": {
+        "note": "ILLUSTRATIVE PLACEHOLDER — the webonyx series is not yet measured on this runner. See docs/benchmarks.md \"Versus webonyx/graphql-php\" for the real engine-to-engine method.",
+        "unit": "ms",
+        "scenarios": [
+            {
+                "label": "parse: list query",
+                "thisEngineMs": 0.021,
+                "webonyxMs": 0.033
+            },
+            {
+                "label": "validate: list query",
+                "thisEngineMs": 0.006,
+                "webonyxMs": 0.208
+            },
+            {
+                "label": "execute: flat field",
+                "thisEngineMs": 0.002,
+                "webonyxMs": 0.094
+            },
+            {
+                "label": "execute: list of 100",
+                "thisEngineMs": 0.65,
+                "webonyxMs": 1.4
+            },
+            {
+                "label": "execute: list of 1000",
+                "thisEngineMs": 6.4,
+                "webonyxMs": 11.5
+            }
+        ]
+    },
+    "history": [
+        {
+            "version": "1.3.0",
+            "fullQuery100Ms": 3.9
+        },
+        {
+            "version": "1.4.0",
+            "fullQuery100Ms": 0.71
+        },
+        {
+            "version": "1.5.0",
+            "fullQuery100Ms": 0.679
+        }
+    ]
+}

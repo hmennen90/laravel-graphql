@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>laravel-graphql &middot; Live PHP Playground</title>
+  <!--
+    Live PHP-in-the-browser playground for hmennen90/laravel-graphql.
+    Runs real PHP via php-wasm (pinned 0.0.9-alpha-32, single-threaded PhpWeb build — needs no
+    COOP/COEP headers, which GitHub Pages cannot set). Must be served over http(s).
+    No secrets, no storage dependency.
+  -->
+  <style>
+    :root {
+      --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --text: #e7e9ee;
+      --muted: #9aa3b2; --border: #2a2f3d; --accent: #7c5cff; --accent-2: #22d3ee;
+      --ok: #34d399; --warn: #fbbf24; --err: #f87171; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    [data-theme="light"] {
+      --bg: #f6f7fb; --panel: #ffffff; --panel-2: #f0f2f8; --text: #1a1d26;
+      --muted: #5b6270; --border: #e2e5ee; --accent: #6b46ff; --accent-2: #0891b2;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--panel); flex-wrap: wrap;
+    }
+    header h1 { font-size: 1.15rem; margin: 0; letter-spacing: -0.01em; }
+    header .sub { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
+    .toolbar { display: flex; gap: 0.5rem; align-items: center; }
+    a.link { color: var(--accent-2); text-decoration: none; font-size: 0.85rem; }
+    a.link:hover { text-decoration: underline; }
+    button.toggle, button.preset, button.run {
+      background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.45rem 0.8rem; cursor: pointer; font-size: 0.85rem;
+    }
+    button.toggle:hover, button.preset:hover { border-color: var(--accent); }
+    button.preset.active { border-color: var(--accent); color: var(--accent); }
+    main { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+    .banner {
+      background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--warn);
+      border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.87rem; color: var(--text); margin-bottom: 1.25rem;
+    }
+    .banner b { color: var(--warn); }
+    .controls { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-bottom: 0.85rem; }
+    .presets { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .spacer { flex: 1 1 auto; }
+    .status {
+      display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--muted);
+      font-family: var(--mono);
+    }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); animation: pulse 1.2s ease-in-out infinite; }
+    .dot.ready { background: var(--ok); animation: none; }
+    .dot.error { background: var(--err); animation: none; }
+    @keyframes pulse { 0%,100% { opacity: 0.35; } 50% { opacity: 1; } }
+    button.run { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; padding: 0.5rem 1.3rem; }
+    button.run:disabled { opacity: 0.5; cursor: not-allowed; }
+    .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .pane { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .pane .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--border); }
+    textarea#editor {
+      flex: 1; min-height: 420px; resize: vertical; border: 0; outline: none; padding: 0.9rem;
+      background: transparent; color: var(--text); font-family: var(--mono); font-size: 13px; line-height: 1.5; tab-size: 4;
+    }
+    pre#output {
+      flex: 1; min-height: 420px; margin: 0; padding: 0.9rem; overflow: auto;
+      background: transparent; color: var(--text); font-family: var(--mono); font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+    }
+    details.bundle { margin-top: 1.5rem; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 0.5rem 1rem; }
+    details.bundle summary { cursor: pointer; font-weight: 600; padding: 0.5rem 0; }
+    details.bundle pre { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; overflow: auto; font-family: var(--mono); font-size: 12.5px; }
+    details.bundle code { background: var(--panel-2); padding: 0.1em 0.35em; border-radius: 5px; font-family: var(--mono); font-size: 0.9em; }
+    footer { color: var(--muted); font-size: 0.8rem; text-align: center; padding: 2rem 1rem 3rem; }
+    @media (max-width: 760px) {
+      .panes { grid-template-columns: 1fr; }
+      textarea#editor, pre#output { min-height: 260px; }
+      main { padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>laravel-graphql &mdash; Live PHP Playground</h1>
+      <div class="sub">Real PHP in your browser via WebAssembly (php-wasm)</div>
+    </div>
+    <div class="toolbar">
+      <a class="link" href="benchmarks.html">Benchmarks &rarr;</a>
+      <button class="toggle" id="themeToggle" type="button">Light mode</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="banner">
+      <b>Heads up:</b> this runs PHP compiled to WebAssembly inside your browser. It is great for
+      trying the API, but it is <b>not representative of performance</b> &mdash; WASM PHP is far
+      slower than native PHP and single-threaded. For real numbers see the
+      <a class="link" href="benchmarks.html">benchmark dashboard</a>.
+    </div>
+
+    <div class="controls">
+      <div class="presets" id="presets">
+        <button class="preset active" data-preset="graphql" type="button">Self-contained GraphQL demo</button>
+        <button class="preset" data-preset="package" type="button">Package API</button>
+        <button class="preset" data-preset="plain" type="button">Plain PHP</button>
+      </div>
+      <div class="spacer"></div>
+      <span class="status"><span class="dot" id="statusDot"></span><span id="statusText">Booting PHP&hellip;</span></span>
+      <button class="run" id="runBtn" type="button" disabled>Run</button>
+    </div>
+
+    <div class="panes">
+      <div class="pane">
+        <div class="label">PHP source</div>
+        <textarea id="editor" spellcheck="false" autocomplete="off"></textarea>
+      </div>
+      <div class="pane">
+        <div class="label">Output</div>
+        <pre id="output">Waiting for the runtime to boot&hellip;</pre>
+      </div>
+    </div>
+
+    <details class="bundle">
+      <summary>Bundle the real engine (switch the Package API preset to real execution)</summary>
+      <p>The <b>Package API</b> preset guards its real-engine path behind
+        <code>is_file('/preload/vendor/autoload.php')</code>. This hosted demo ships no
+        <code>vendor/</code>, so it prints an explanatory message and the PHP version instead of
+        fatally requiring a missing file. To run the real engine, mount the package's
+        <code>vendor/</code> into the WASM filesystem at <code>/preload/vendor</code>:</p>
+      <pre>// 1. Install the package somewhere and collect its autoloadable vendor/ tree:
+composer require hmennen90/laravel-graphql
+
+// 2. Serve vendor/ as static assets, then mount it into the WASM FS before running.
+//    (php-wasm 0.0.9-alpha-32, single-threaded PhpWeb build)
+import { PhpWeb } from 'https://cdn.jsdelivr.net/npm/php-wasm@0.0.9-alpha-32/PhpWeb.mjs';
+
+const php = new PhpWeb();
+await new Promise(r => php.addEventListener('ready', r, { once: true }));
+
+// Write each vendor file into the in-memory FS under /preload/vendor, e.g.:
+//   php.FS.mkdirTree('/preload/vendor');
+//   php.FS.writeFile('/preload/vendor/autoload.php', await (await fetch('vendor/autoload.php')).text());
+// A build step typically walks vendor/ and emits these writes, or mounts a
+// packed image. Once /preload/vendor/autoload.php exists, the Package API preset
+// takes its real branch automatically — no code change needed.</pre>
+      <p>Because it is the identical framework-agnostic engine used in the benchmarks, a real
+        query then returns exactly what a server would &mdash; only slower, because it is WASM.</p>
+    </details>
+
+    <footer>
+      Runtime: php-wasm <code style="font-family:var(--mono)">0.0.9-alpha-32</code> (single-threaded <code style="font-family:var(--mono)">PhpWeb</code>).
+      Pinned so output/event behaviour stays stable across upgrades.
+    </footer>
+  </main>
+
+  <script type="module">
+  //---------------------------------------------------------------------------
+  // Theme (in-memory only, no storage dependency).
+  //---------------------------------------------------------------------------
+  const root = document.documentElement;
+  const toggle = document.getElementById('themeToggle');
+  toggle.addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    toggle.textContent = next === 'dark' ? 'Light mode' : 'Dark mode';
+  });
+
+  //---------------------------------------------------------------------------
+  // Presets
+  //---------------------------------------------------------------------------
+  const PRESETS = {
+    graphql: `<?php
+// Self-contained GraphQL demo — no dependencies, no package required.
+// A tiny, forgiving field selector over an in-memory dataset: enough to get a
+// real query -> JSON result with zero bundling. Unknown fields resolve to null.
+
+$dataset = [
+    'users' => [
+        ['id' => 1, 'name' => 'Ada Lovelace',  'email' => 'ada@example.test',   'active' => true],
+        ['id' => 2, 'name' => 'Alan Turing',   'email' => 'alan@example.test',  'active' => false],
+        ['id' => 3, 'name' => 'Grace Hopper',  'email' => 'grace@example.test', 'active' => true],
+    ],
+];
+
+$query = '{ users { id name active } }';
+
+function run_query(string $query, array $dataset): array
+{
+    // Grab the root field name and its (single-level) sub-selection.
+    if (!preg_match('/\\{\\s*(\\w+)\\s*\\{([^}]*)\\}/s', $query, $m)) {
+        return ['errors' => [['message' => 'Expected a { field { ... } } selection.']]];
+    }
+
+    $root   = $m[1];
+    $fields = preg_split('/\\s+/', trim($m[2]), -1, PREG_SPLIT_NO_EMPTY);
+    $rows   = $dataset[$root] ?? null;
+
+    if ($rows === null) {
+        return ['data' => [$root => null]];
+    }
+
+    $selected = [];
+    foreach ($rows as $row) {
+        $picked = [];
+        foreach ($fields as $field) {
+            $picked[$field] = $row[$field] ?? null; // unknown field -> null
+        }
+        $selected[] = $picked;
+    }
+
+    return ['data' => [$root => $selected]];
+}
+
+echo json_encode(run_query($query, $dataset), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+`,
+
+    package: `<?php
+// Package API — runs the REAL engine when its vendor/ is bundled into the WASM
+// filesystem at /preload/vendor. In this hosted demo it is not present, so this
+// falls back to an explanatory message instead of a fatal require.
+
+$autoload = '/preload/vendor/autoload.php';
+
+$sdl = <<<'GQL'
+type Query { users(active: Boolean): [User!]! }
+type User  { id: ID! name: String active: Boolean }
+GQL;
+
+$query = '{ users { id name active } }';
+
+if (is_file($autoload)) {
+    require $autoload;
+
+    $users = [
+        ['id' => '1', 'name' => 'Ada Lovelace', 'active' => true],
+        ['id' => '2', 'name' => 'Alan Turing',  'active' => false],
+        ['id' => '3', 'name' => 'Grace Hopper', 'active' => true],
+    ];
+
+    $schema = \\Hmennen90\\GraphQL\\Engine\\Building\\SchemaFirst\\SchemaBuilder::fromSdl($sdl, [
+        'Query' => [
+            'users' => static function ($root, array $args) use ($users): array {
+                $active = $args['active'] ?? null;
+
+                return $active === null
+                    ? $users
+                    : array_values(array_filter($users, static fn ($u) => $u['active'] === $active));
+            },
+        ],
+    ]);
+
+    $document = \\Hmennen90\\GraphQL\\Engine\\Language\\Parser::parse($query);
+    $result   = \\Hmennen90\\GraphQL\\Engine\\Executor\\Executor::execute($schema, $document);
+
+    echo json_encode($result->toArray(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+} else {
+    echo "Package API preset — demo mode\\n";
+    echo "==============================\\n\\n";
+    echo "The real engine is not bundled into this browser build, so there is\\n";
+    echo "nothing to require at {$autoload}.\\n\\n";
+    echo 'Running PHP ' . PHP_VERSION . " in WebAssembly.\\n\\n";
+    echo "To execute against the real package, bundle its vendor/ into the WASM\\n";
+    echo "filesystem at /preload/vendor — see 'Bundle the real engine' below.\\n";
+}
+`,
+
+    plain: `<?php
+// Scratch PHP — edit freely and hit Run.
+echo 'PHP ' . PHP_VERSION . " running in your browser via WebAssembly.\\n\\n";
+
+$squares = array_map(static fn ($n) => $n * $n, range(1, 8));
+
+echo 'squares: ' . implode(', ', $squares) . "\\n";
+echo 'json:    ' . json_encode(['ok' => true, 'squares' => $squares]) . "\\n";
+`,
+  };
+
+  const editor = document.getElementById('editor');
+  const output = document.getElementById('output');
+  const runBtn = document.getElementById('runBtn');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const presetBtns = [...document.querySelectorAll('.preset')];
+
+  editor.value = PRESETS.graphql;
+  presetBtns.forEach(btn => btn.addEventListener('click', () => {
+    presetBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    editor.value = PRESETS[btn.dataset.preset];
+  }));
+
+  function setStatus(kind, text) {
+    statusDot.className = 'dot' + (kind === 'ready' ? ' ready' : kind === 'error' ? ' error' : '');
+    statusText.textContent = text;
+  }
+
+  //---------------------------------------------------------------------------
+  // php-wasm boot. Pinned single-threaded PhpWeb build (no COOP/COEP needed).
+  //---------------------------------------------------------------------------
+  const decoder = new TextDecoder();
+
+  // Event `detail` has shifted shape across php-wasm versions: it may be a string,
+  // an array of strings, or an array of Uint8Array chunks. Normalise all of them.
+  function detailToText(detail) {
+    if (detail == null) return '';
+    const parts = Array.isArray(detail) ? detail : [detail];
+    return parts.map(part => {
+      if (typeof part === 'string') return part;
+      if (part instanceof Uint8Array) return decoder.decode(part);
+      if (part && part.buffer instanceof ArrayBuffer) return decoder.decode(part);
+      return String(part);
+    }).join('');
+  }
+
+  let php = null;
+  let ready = false;
+  let outputBuffer = '';
+
+  async function boot() {
+    let PhpWeb;
+    try {
+      ({ PhpWeb } = await import('https://cdn.jsdelivr.net/npm/php-wasm@0.0.9-alpha-32/PhpWeb.mjs'));
+    } catch (e) {
+      setStatus('error', 'Could not load php-wasm (serve over http/https): ' + (e.message || e));
+      output.textContent = 'The playground must be served over http(s) — an ES module and the wasm '
+        + 'binary have to be fetched. Try `python3 -m http.server` from the built site, or open the '
+        + 'hosted docs.';
+      return;
+    }
+
+    php = new PhpWeb();
+    // Attach listeners synchronously so no early output/ready event is missed.
+    php.addEventListener('output', e => { outputBuffer += detailToText(e.detail); });
+    php.addEventListener('error', e => { outputBuffer += detailToText(e.detail); });
+
+    try {
+      await new Promise((resolve, reject) => {
+        php.addEventListener('ready', () => resolve(), { once: true });
+        if (php.ready && typeof php.ready.then === 'function') php.ready.then(resolve, reject);
+      });
+
+      // Prove the runtime is live by reading PHP_VERSION.
+      outputBuffer = '';
+      await php.run('<?php echo PHP_VERSION;');
+      await tick();
+      const version = outputBuffer.trim() || 'unknown';
+
+      ready = true;
+      runBtn.disabled = false;
+      setStatus('ready', 'PHP ' + version + ' ready');
+      output.textContent = 'Runtime ready (PHP ' + version + '). Pick a preset and press Run.';
+    } catch (e) {
+      setStatus('error', 'Boot failed: ' + (e.message || e));
+      output.textContent = 'PHP runtime failed to boot: ' + (e.message || e);
+    }
+  }
+
+  const tick = () => new Promise(r => setTimeout(r, 0));
+
+  async function runPhp() {
+    if (!ready || !php) return;
+    runBtn.disabled = true;
+    output.textContent = 'Running…';
+
+    // Reset interpreter state between runs so snippets don't leak into each other.
+    try { if (typeof php.refresh === 'function') await php.refresh(); } catch (_) { /* keep going */ }
+
+    outputBuffer = '';
+    try {
+      await php.run(editor.value);
+      await tick(); // let trailing output/error events flush
+      output.textContent = outputBuffer.length ? outputBuffer : '(no output)';
+    } catch (e) {
+      const captured = outputBuffer.length ? outputBuffer + '\n\n' : '';
+      output.textContent = captured + 'Execution error: ' + (e.message || e);
+    } finally {
+      runBtn.disabled = false;
+    }
+  }
+
+  runBtn.addEventListener('click', runPhp);
+  // Ctrl/Cmd+Enter to run.
+  editor.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runPhp(); }
+  });
+
+  boot();
+  </script>
+</body>
+</html>
