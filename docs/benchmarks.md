@@ -1,11 +1,17 @@
 # Benchmarks
 
+!!! tip "Interactive"
+    See the numbers below rendered as live charts in the
+    [**Benchmark Dashboard**](playground/benchmarks.html), and try the engine's API in the
+    [**Live Playground**](playground/playground.html) (real PHP in your browser via WebAssembly).
+
 The engine ships with a dependency-free micro-benchmark that exercises each phase in
 isolation (parse, build, validate, execute) plus list throughput and DataLoader
 batching:
 
 ```bash
-php benchmarks/run.php   # or: composer bench
+php benchmarks/run.php              # or: composer bench  — human-readable table
+php benchmarks/run.php --json=out.json   # machine-readable JSON (feeds the dashboard)
 ```
 
 It reports the **median** over many iterations (more stable than the mean under GC

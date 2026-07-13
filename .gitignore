@@ -1,5 +1,6 @@
 /vendor/
 /build/
+/site/
 composer.lock
 .phpunit.cache/
 .phpunit.result.cache
