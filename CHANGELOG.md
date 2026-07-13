@@ -1,3 +1,9 @@
+## [1.9.0](https://github.com/hmennen90/laravel-graphql/compare/v1.8.0...v1.9.0) (2026-07-13)
+
+### Features
+
+* **bench:** measure webonyx for the DataLoader and full-pipeline scenarios ([#4](https://github.com/hmennen90/laravel-graphql/issues/4)) ([81492a3](https://github.com/hmennen90/laravel-graphql/commit/81492a39118af3bd7e388073f92e33c14f25b48f))
+
 ## [1.8.0](https://github.com/hmennen90/laravel-graphql/compare/v1.7.0...v1.8.0) (2026-07-13)
 
 ### Features
