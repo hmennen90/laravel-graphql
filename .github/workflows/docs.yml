@@ -10,6 +10,10 @@ on:
       - 'src/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
+  schedule:
+    # Weekly: rebuild only if a newer webonyx has been released since the last deploy,
+    # so the comparison chart tracks the current webonyx without needless rebuilds.
+    - cron: '0 6 * * 1'
 
 permissions:
   contents: read
@@ -21,8 +25,40 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Decide whether to (re)build. Push/manual runs always proceed; scheduled runs only
+  # proceed when a newer stable webonyx exists than the one already on the dashboard —
+  # a self-contained gate so no cross-workflow dispatch (and no PAT) is needed.
+  gate:
+    name: Should rebuild?
+    runs-on: ubuntu-latest
+    outputs:
+      proceed: ${{ steps.decide.outputs.proceed }}
+    steps:
+      - id: decide
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          # Tolerant of transient network failures: on error these stay empty and the
+          # run simply skips (no red gate job just because a fetch blipped).
+          latest=$(curl -sS --max-time 20 https://repo.packagist.org/p2/webonyx/graphql-php.json 2>/dev/null \
+            | jq -r '[.packages["webonyx/graphql-php"][] | select(.version | test("^v?[0-9]+\\.[0-9]+\\.[0-9]+$"))][0].version' 2>/dev/null \
+            | sed 's/^v//' || true)
+          current=$(curl -sS --max-time 20 https://hmennen90.github.io/laravel-graphql/playground/benchmarks.json 2>/dev/null \
+            | jq -r '.comparison.comparedVersion // empty' 2>/dev/null | sed 's/^v//' || true)
+          echo "latest webonyx: '$latest' | on dashboard: '$current'"
+          if [ -n "$latest" ] && [ "$latest" != "$current" ]; then
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Rebuilding: webonyx $current -> $latest"
+          else
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping: webonyx unchanged ($current)"
+          fi
+
   build:
     name: Build docs
+    needs: gate
+    if: ${{ needs.gate.outputs.proceed == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
