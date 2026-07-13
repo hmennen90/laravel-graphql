@@ -1,3 +1,9 @@
+## [1.8.0](https://github.com/hmennen90/laravel-graphql/compare/v1.7.0...v1.8.0) (2026-07-13)
+
+### Features
+
+* **bench:** webonyx overlays in every comparable chart + real release history ([#3](https://github.com/hmennen90/laravel-graphql/issues/3)) ([c430d2b](https://github.com/hmennen90/laravel-graphql/commit/c430d2b224967cf5c7d0d1476669175b8698d148))
+
 ## [1.7.0](https://github.com/hmennen90/laravel-graphql/compare/v1.6.0...v1.7.0) (2026-07-13)
 
 ### Features
