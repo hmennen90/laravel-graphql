@@ -12,6 +12,8 @@ declare(strict_types=1);
  *   php benchmarks/vs-webonyx.php                      human-readable table (default)
  *   php benchmarks/vs-webonyx.php --json               comparison block as JSON to stdout
  *   php benchmarks/vs-webonyx.php --json=benchmarks.json   merge real numbers into that file
+ *   php benchmarks/vs-webonyx.php --history-baseline=benchmarks.json   write only the
+ *                                                          webonyx history-baseline line
  *
  * With --json=path the `comparison` block of an existing benchmarks.json is replaced
  * in place with *measured* numbers (both engines on this runner, identical SDL + data),
@@ -46,17 +48,26 @@ if (! class_exists(Webonyx::class)) {
 
 $emitJson = false;
 $jsonPath = null;
+$baselinePath = null;
 foreach (array_slice($argv, 1) as $arg) {
     if ($arg === '--json') {
         $emitJson = true;
     } elseif (str_starts_with($arg, '--json=')) {
         $emitJson = true;
         $jsonPath = substr($arg, 7);
+    } elseif (str_starts_with($arg, '--history-baseline=')) {
+        // Write only the webonyx full-100 reference line into an existing benchmarks.json.
+        // Used by measure-history.sh on the SAME machine as the frozen history backfill,
+        // never by CI (whose different hardware would break the trend's comparability).
+        $baselinePath = substr($arg, 19);
     }
 }
 
+// Pure baseline mode: skip the engine-vs-engine comparison sweep and its table.
+$baselineOnly = $baselinePath !== null && ! $emitJson;
+
 // JSON-to-stdout must not be polluted by the human table.
-$printTable = ! ($emitJson && $jsonPath === null);
+$printTable = ! ($emitJson && $jsonPath === null) && ! $baselineOnly;
 
 /**
  * @param  callable():void  $fn
@@ -221,10 +232,13 @@ $rows = [
 $webonyxVersion = \Composer\InstalledVersions::getPrettyVersion('webonyx/graphql-php') ?? 'unknown';
 
 // Measure both engines for every scenario up front so the table and the JSON
-// are two views of one measurement set (same guarantee run.php makes).
+// are two views of one measurement set (same guarantee run.php makes). Skipped in
+// pure --history-baseline mode, which only needs the webonyx full-100 number.
 $measured = [];
-foreach ($rows as [$name, $oursFn, $webFn]) {
-    $measured[] = ['label' => $name, 'oursNs' => median_ns($oursFn), 'webonyxNs' => median_ns($webFn)];
+if (! $baselineOnly) {
+    foreach ($rows as [$name, $oursFn, $webFn]) {
+        $measured[] = ['label' => $name, 'oursNs' => median_ns($oursFn), 'webonyxNs' => median_ns($webFn)];
+    }
 }
 
 if ($printTable) {
@@ -342,4 +356,35 @@ if ($emitJson) {
     } else {
         echo json_encode($comparison, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
     }
+}
+
+// ---------------------------------------------------------------------------
+// History baseline: webonyx's full parse+validate+execute (100) as a flat
+// reference line on the performance-over-releases chart. It answers "at which of
+// OUR releases did we drop below webonyx" (webonyx is constant across our tags).
+// Written last so it survives the run.php rebuild; measured in the same CI run as
+// the history backfill, so the whole chart stays on one machine.
+// ---------------------------------------------------------------------------
+
+if ($baselinePath !== null) {
+    $baselineMs = round(median_ns(static function () use ($webonyx, $list100): void {
+        $doc = WebonyxParser::parse($list100);
+        WebonyxValidator::validate($webonyx, $doc);
+        Webonyx::executeQuery($webonyx, $doc)->toArray();
+    }, 200) / 1_000_000, 3);
+
+    $doc = is_file($baselinePath)
+        ? (json_decode((string) file_get_contents($baselinePath), true) ?: [])
+        : [];
+    $doc['historyBaseline'] = [
+        'label' => 'webonyx '.$webonyxVersion,
+        'comparedVersion' => $webonyxVersion,
+        'fullQuery100Ms' => $baselineMs,
+        'measured' => true,
+    ];
+    file_put_contents(
+        $baselinePath,
+        json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n"
+    );
+    fprintf(STDERR, "wrote webonyx history baseline (%.3f ms) into %s\n", $baselineMs, $baselinePath);
 }

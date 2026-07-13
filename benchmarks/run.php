@@ -16,10 +16,10 @@ declare(strict_types=1);
  *   php benchmarks/run.php --json=path.json --version=1.5.0
  *   php benchmarks/run.php --json=path.json --version=1.5.0 --update-history
  *
- * By default the `history` (performance-over-releases) block is preserved verbatim —
- * it is a fixed same-machine backfill (see benchmarks/measure-history.sh), so CI must
- * not append this runner's hardware to it. Pass --update-history only for a deliberate,
- * one-machine re-measurement.
+ * By default the `history` and `historyBaseline` blocks are preserved verbatim — they
+ * are rebuilt from the git tags by benchmarks/measure-history.sh (run in the same CI
+ * job as everything else, so the whole dashboard is one machine). Pass --update-history
+ * only to additionally upsert this run's version.
  *
  * The table and the JSON are fed by the *same* benchmark run, so the published numbers
  * can never drift from what the harness measured.
@@ -282,12 +282,14 @@ if ($emitJson) {
         }
     }
 
-    // The performance-over-releases series is a fixed, SAME-MACHINE backfill (a
-    // cross-release trend is only meaningful on one machine — mixing this runner's
-    // hardware into it would be misleading). So it is preserved verbatim from the
-    // existing file and only rewritten when --update-history is passed explicitly
-    // (a deliberate, one-machine re-measurement — see benchmarks/measure-history.sh).
+    // The performance-over-releases series (and its webonyx baseline) is owned by
+    // benchmarks/measure-history.sh, which rebuilds it from the git tags. run.php only
+    // preserves whatever is already in the file so this step never clobbers it — the
+    // whole chart is generated in one CI run alongside everything else, keeping it on
+    // one machine. --update-history additionally upserts this run's version (used for a
+    // deliberate single-version refresh; measure-history.sh is the full authority).
     $history = [];
+    $historyBaseline = null;
     if ($jsonPath !== null && is_file($jsonPath)) {
         /** @var array<string, mixed> $existing */
         $existing = json_decode((string) file_get_contents($jsonPath), true) ?: [];
@@ -297,6 +299,9 @@ if ($emitJson) {
                     $history[(string) $entry['version']] = (float) ($entry['fullQuery100Ms'] ?? 0.0);
                 }
             }
+        }
+        if (isset($existing['historyBaseline']) && is_array($existing['historyBaseline'])) {
+            $historyBaseline = $existing['historyBaseline'];
         }
     }
     if ($updateHistory) {
@@ -335,6 +340,9 @@ if ($emitJson) {
         ],
         'history' => $historyList,
     ];
+    if ($historyBaseline !== null) {
+        $payload['historyBaseline'] = $historyBaseline;
+    }
 
     $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
     if ($jsonPath !== null) {
