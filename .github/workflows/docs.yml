@@ -39,20 +39,26 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Regenerate benchmark JSON (single source of truth for the dashboard)
-        # One code path feeds both the human table and the JSON, so the published
-        # numbers can't drift. --version stamps the released tag into meta + history.
+      # Everything that feeds the dashboard is generated here, in ONE job on ONE
+      # runner, so every number — current phases/scaling, the engine comparison, the
+      # per-release history and its webonyx baseline — is measured on the same machine.
+      # The committed benchmarks.json is only a bootstrap/file:// fallback; this is the
+      # authoritative copy that ships with the site.
+      - name: Install webonyx (dev-only, ephemeral — not a committed dependency)
+        run: composer require --dev --no-interaction --no-progress webonyx/graphql-php
+
+      - name: Benchmark — current phases/scaling/comparison
         run: |
           VERSION="$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//')"
-          composer bench -- --json=docs/playground/benchmarks.json --version="${VERSION:-dev}"
+          BENCH=docs/playground/benchmarks.json
+          composer bench -- --json="$BENCH" --version="${VERSION:-dev}"
+          composer bench:vs -- --json="$BENCH"
 
-      - name: Measure real webonyx comparison (dev-only, same runner)
-        # Install webonyx ephemerally (not a committed dependency) and overwrite the
-        # comparison block with measured, same-hardware numbers — so the dashboard
-        # shows a real engine-to-engine result rather than an illustrative placeholder.
+      - name: Benchmark — per-release history + webonyx baseline (same runner)
         run: |
-          composer require --dev --no-interaction --no-progress webonyx/graphql-php
-          composer bench:vs -- --json=docs/playground/benchmarks.json
+          BENCH=docs/playground/benchmarks.json
+          bash benchmarks/measure-history.sh "$BENCH"
+          php benchmarks/vs-webonyx.php --history-baseline="$BENCH"
 
       - uses: actions/setup-python@v5
         with:

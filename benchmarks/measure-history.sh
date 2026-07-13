@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 #
-# Backfill the performance-over-releases series on ONE machine.
+# Backfill the performance-over-releases series in one run.
 #
-# A cross-release trend is only meaningful measured on identical hardware, so the
-# `history` block in benchmarks.json is a deliberate, same-machine backfill rather
-# than something CI appends per release (CI hardware would mix into the trend).
+# A cross-release trend is only meaningful measured on identical hardware, so the whole
+# `history` block is rebuilt in a single run — in CI, the same job that measures the
+# current phases/scaling/comparison, so every number on the dashboard is one machine.
 #
 # For each git tag this checks it out into a throwaway worktree, runs that release's
 # own benchmark harness (so the numbers reflect the engine as it shipped), reads the
 # "full: parse+validate+execute (100)" median, and writes the series into the given
-# benchmarks.json — leaving meta/phases/scaling/comparison untouched.
+# benchmarks.json — leaving meta/phases/scaling/comparison/historyBaseline untouched.
 #
 # Requirements: a PHP 8.4 binary (the engine requires ^8.4). Point $PHP at it if the
 # default `php` on PATH is a different version:

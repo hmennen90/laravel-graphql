@@ -492,15 +492,28 @@
       }),
     }));
 
-    // 6. Performance over releases (line)
+    // 6. Performance over releases (line), with an optional flat webonyx baseline.
+    // webonyx is constant across OUR release timeline, so it's drawn as a horizontal
+    // reference — it shows the release where our engine dropped below it, not webonyx's
+    // own evolution.
+    const histLabels = (data.history || []).map(h => 'v' + h.version);
+    const baseline = data.historyBaseline || null;
+    const histDatasets = [
+      { label: 'this engine — full query, 100 objects (ms)', data: (data.history || []).map(h => h.fullQuery100Ms),
+        borderColor: c.accent2, backgroundColor: c.accent2, tension: 0.25, fill: false, pointRadius: 4 },
+    ];
+    if (baseline && typeof baseline.fullQuery100Ms === 'number') {
+      histDatasets.push({
+        label: (baseline.label || 'webonyx') + ' — reference (constant)',
+        data: histLabels.map(() => baseline.fullQuery100Ms),
+        borderColor: c.muted, backgroundColor: c.muted, borderDash: [6, 4],
+        tension: 0, fill: false, pointRadius: 0,
+      });
+    }
     charts.push(new Chart(document.getElementById('history'), {
       type: 'line',
-      data: {
-        labels: (data.history || []).map(h => 'v' + h.version),
-        datasets: [{ label: 'full query, 100 objects (ms)', data: (data.history || []).map(h => h.fullQuery100Ms),
-          borderColor: c.accent2, backgroundColor: c.accent2, tension: 0.25, fill: false, pointRadius: 4 }],
-      },
-      options: baseOpts(c, { plugins: { legend: { display: false } } }),
+      data: { labels: histLabels, datasets: histDatasets },
+      options: baseOpts(c, { plugins: { legend: { display: !!baseline, labels: { color: c.text, boxWidth: 12, font: { size: 11 } } } } }),
     }));
   }
 
